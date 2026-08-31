@@ -59,7 +59,11 @@ const stubProvider = {
 }
 
 export function getSearchProvider() {
-  const kind = (process.env.SEARCH_PROVIDER || 'stub').toLowerCase()
+  // Tahan terhadap komentar inline ("serper # catatan") & spasi berlebih
+  const kind = String(process.env.SEARCH_PROVIDER || 'stub')
+    .trim()
+    .split(/[\s#]/)[0]
+    .toLowerCase()
   const key = process.env.SEARCH_API_KEY
   if (kind === 'brave') {
     if (!key) throw new NotConfiguredError('SearchProvider brave (SEARCH_API_KEY)')

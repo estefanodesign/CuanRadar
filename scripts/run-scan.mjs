@@ -10,7 +10,9 @@ import { getSearchProvider, getAIProvider } from '../engine/providers.mjs'
 import { createClient } from '@supabase/supabase-js'
 
 const args = process.argv.slice(2)
-const type = args.includes('--deep') ? 'deep' : 'quick'
+const typeIndex = args.indexOf('--type')
+const typeArg = typeIndex >= 0 ? args[typeIndex + 1] : undefined
+const type = typeArg === 'deep' || args.includes('--deep') ? 'deep' : 'quick'
 const category = (args[args.indexOf('--category') + 1] ?? 'shopping').toLowerCase()
 const save = args.includes('--save')
 
