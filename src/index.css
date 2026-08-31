@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
-/* ——— CuanRadar theme (Prompt_UI: Deep Sea Jade / Champagne Gold / Off-White) ——— */
+/* ——— CuanRadar theme (primary → Deep Plum #0B0713, harmoni dengan Champagne Gold & Off-White) ——— */
 @theme {
-  --color-jade: #0b3b36;
-  --color-jade-dark: #062a26;
-  --color-jade-soft: #0e4a43;
+  --color-jade: #0b0713; /* primary: deep plum (pengganti Deep Sea Jade #0B3B36) */
+  --color-jade-dark: #060308; /* plum paling dalam (footer, section terdalam) */
+  --color-jade-soft: #1a1129; /* plumm elegan (kartu highlight/permukaan terangkat) */
   --color-gold: #d4af37;
   --color-gold-soft: #e6c85c;
   --color-cream: #f5f0e1;
