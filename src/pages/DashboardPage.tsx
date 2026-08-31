@@ -1,9 +1,8 @@
 // CuanRadar — Dashboard (PRD §51): greeting, kuota, tombol scan, rekomendasi, saved, recent scan
 import { Link } from '@tanstack/react-router'
 import { getPlan, DEFAULT_PLAN } from '../config/plans'
-import { getSeedPlatforms, getSeedMeta } from '../lib/seed'
+import { usePlatforms } from '../lib/platforms'
 import { getSavedIds, toggleSaved } from '../lib/savedApps'
-import { formatDate } from '../lib/format'
 import { RewardCard } from '../components/RewardCard'
 import { EmptyState } from '../components/EmptyState'
 import { useState } from 'react'
@@ -18,8 +17,7 @@ function greeting(): string {
 
 export function DashboardPage() {
   const plan = getPlan(DEFAULT_PLAN)
-  const platforms = getSeedPlatforms()
-  const meta = getSeedMeta()
+  const { platforms, source } = usePlatforms()
   const saved = getSavedIds()
   const [, setSavedVersion] = useState(0)
 
@@ -86,7 +84,7 @@ export function DashboardPage() {
           ))}
         </div>
         <p className="mt-2 text-[11px] text-slate-600">
-          Data kurasi manual F0 ({meta.version}) · {formatDate(meta.generated_at)} · skor & engine AI hadir di BUILD 2–3.
+          Sumber: {source === 'supabase' ? 'database terverifikasi (Supabase)' : 'kurasi manual F0'} · skor & engine AI penuh hadir di BUILD 3.
         </p>
       </section>
 

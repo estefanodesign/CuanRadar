@@ -9,7 +9,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "db:seed": "node scripts/seed-supabase.mjs"
+    "db:seed": "node --env-file=.env scripts/seed-supabase.mjs",
+    "scan:quick": "node --env-file=.env scripts/run-scan.mjs --type quick",
+    "scan:deep": "node --env-file=.env scripts/run-scan.mjs --type deep"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",

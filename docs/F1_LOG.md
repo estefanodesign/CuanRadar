@@ -30,9 +30,22 @@ UI · authentication · database · navigation · profile · rewards foundation 
 3. **Score/rank belum dihitung** (`score: null`) — masuk BUILD 3 (deterministik 6 faktor).
 4. **Keamanan**: service-role key hanya untuk script/edge function; RLS aktif sejak migrasi pertama (AI_RULES §6, §16).
 
-## TODO setelah BUILD 1 (menuju BUILD 2)
+## BUILD 2 — Status (SELESAI, 2026-08-30)
 
-- [ ] Buat project Supabase, jalankan migrasi `0001_init.sql`, isi `.env.local`, jalankan `npm run db:seed`.
-- [ ] Hubungkan UI ke Supabase (reward_apps via client, ganti data lokal).
-- [ ] BUILD 2: SearchProvider & AIProvider nyata (deepseek + search free-tier), discovery/extraction, Quick Scan cold start.
-- [ ] BUILD 3: verifikasi tiga sumbu, kalkulasi & scoring 6 faktor, cache, Budget Governor, Compare penuh.
+| # | Tugas | Status | Catatan |
+|---|---|---|---|
+| 1 | Seed 30 platform ke Supabase | ✅ Selesai | `npm run db:seed` — 30 berhasil, 0 gagal |
+| 2 | UI → Supabase (`reward_apps`) | ✅ Selesai | `src/lib/platforms.ts` (usePlatforms, fallback seed jujur); semua halaman memakai DB + label sumber |
+| 3 | Provider nyata | ✅ Selesai | `engine/providers.mjs`: Brave/Serper (search) + DeepSeek (AI, routing cheap/mid/premium); stub bila kunci kosong |
+| 4 | Engine discovery/extraction | ✅ Selesai | `engine/scan.mjs` (DB-first, limit PRD §13/§18, dedup), `engine/extraction.mjs` (JSON schema + sanitasi + retry terbatas), `engine/sufficiency.mjs` (PRD §14) |
+| 5 | CLI scan | ✅ Selesai | `npm run scan:quick` / `scan:deep` (+ `--save` → review_queue_items) |
+| 6 | Verifikasi end-to-end | ✅ Selesai | Quick Scan DB-first: data 30 platform, sufficiency 6/4 → `cache_completed`, 0 search/AI; build hijau (145,23 kB gzip) |
+
+**Catatan:** Deep Scan discovery butuh `DEEPSEEK_API_KEY` + `SEARCH_PROVIDER`/`SEARCH_API_KEY` (free-tier Brave/Serper) — belum diisi user; engine menolak dengan pesan jelas (tidak mengarang, PRD §13/§18).
+
+## TODO setelah BUILD 2 (menuju BUILD 3)
+
+- [ ] Isi `DEEPSEEK_API_KEY` + `SEARCH_PROVIDER=brave|serper` + `SEARCH_API_KEY` di `.env`, lalu uji `npm run scan:deep -- --save`.
+- [ ] BUILD 3: verifikasi tiga sumbu + rubrik 8 pemeriksaan, kalkulasi & scoring 6 faktor (deterministik), cache (key+TTL), Budget Governor, cost tracking per scan, alert.
+- [ ] BUILD 3: integrasi edge function untuk scan via API (POST /api/scan → queue) — pengganti CLI.
+- [ ] Deploy edge function & migrasi tambahan bila schema berubah.

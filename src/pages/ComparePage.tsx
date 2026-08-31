@@ -1,14 +1,17 @@
 // CuanRadar — Compare (PRD Appendix A5; kuota per plan: Free 4 / Pro 8 / Pro+ 16)
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { getPlan, DEFAULT_PLAN } from '../config/plans'
-import { getSeedPlatforms, getSeedPlatformById } from '../lib/seed'
+import { usePlatforms } from '../lib/platforms'
 import { CATEGORY_LABELS, getPayoutMethodLabel, getRiskLabel, getVerificationLabel } from '../lib/format'
 import { EmptyState } from '../components/EmptyState'
+import type { Platform } from '../types'
 
 export function ComparePage() {
   const plan = getPlan(DEFAULT_PLAN)
-  const platforms = getSeedPlatforms()
+  const { platforms } = usePlatforms()
   const [selected, setSelected] = useState<string[]>([])
+
+  const byId = useMemo(() => new Map(platforms.map((p) => [p.id, p])), [platforms])
 
   const toggle = (id: string) => {
     setSelected((cur) => {
@@ -18,7 +21,7 @@ export function ComparePage() {
     })
   }
 
-  const items = selected.map((id) => getSeedPlatformById(id)).filter((p): p is NonNullable<typeof p> => Boolean(p))
+  const items = selected.map((id) => byId.get(id)).filter((p): p is Platform => Boolean(p))
 
   return (
     <div className="space-y-4">
@@ -70,12 +73,12 @@ export function ComparePage() {
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {[
-                { label: 'Kategori', render: (id: string) => CATEGORY_LABELS[getSeedPlatformById(id)?.category ?? 'lainnya'] },
-                { label: 'Reward', render: (id: string) => getSeedPlatformById(id)?.reward_types.join(', ') ?? '—' },
-                { label: 'Payout', render: (id: string) => (getSeedPlatformById(id)?.payout_methods ?? []).map(getPayoutMethodLabel).join(', ') || '—' },
-                { label: 'Verifikasi', render: (id: string) => getVerificationLabel(getSeedPlatformById(id)?.verification_status ?? 'unverified') },
-                { label: 'Risiko', render: (id: string) => getRiskLabel(getSeedPlatformById(id)?.risk_level ?? 'sedang') },
-                { label: 'Terverif', render: (id: string) => getSeedPlatformById(id)?.last_verified_at.slice(0, 10) ?? '—' },
+                { label: 'Kategori', render: (id: string) => CATEGORY_LABELS[byId.get(id)?.category ?? 'lainnya'] },
+                { label: 'Reward', render: (id: string) => byId.get(id)?.reward_types.join(', ') ?? '—' },
+                { label: 'Payout', render: (id: string) => (byId.get(id)?.payout_methods ?? []).map(getPayoutMethodLabel).join(', ') || '—' },
+                { label: 'Verifikasi', render: (id: string) => getVerificationLabel(byId.get(id)?.verification_status ?? 'unverified') },
+                { label: 'Risiko', render: (id: string) => getRiskLabel(byId.get(id)?.risk_level ?? 'sedang') },
+                { label: 'Terverif', render: (id: string) => byId.get(id)?.last_verified_at.slice(0, 10) ?? '—' },
               ].map((row) => (
                 <tr key={row.label}>
                   <td className="px-3 py-2 font-medium text-slate-500">{row.label}</td>

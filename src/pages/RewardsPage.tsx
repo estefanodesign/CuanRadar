@@ -1,6 +1,6 @@
 // CuanRadar — Rewards (katalog platform, PRD §53/§55)
 import { useMemo, useState } from 'react'
-import { getSeedPlatforms } from '../lib/seed'
+import { usePlatforms } from '../lib/platforms'
 import { RewardCard } from '../components/RewardCard'
 import { getSavedIds, toggleSaved } from '../lib/savedApps'
 import { EmptyState } from '../components/EmptyState'
@@ -19,20 +19,26 @@ export function RewardsPage() {
   const [category, setCategory] = useState<Category | 'all'>('all')
   const [, setSavedVersion] = useState(0)
   const saved = getSavedIds()
+  const { platforms: allPlatforms, source } = usePlatforms()
 
   const platforms = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return getSeedPlatforms().filter((p) => {
+    return allPlatforms.filter((p) => {
       const okCategory = category === 'all' || p.category === category
       const okQuery = q === '' || p.name.toLowerCase().includes(q) || (p.developer ?? '').toLowerCase().includes(q)
       return okCategory && okQuery
     })
-  }, [query, category])
+  }, [query, category, allPlatforms])
 
   return (
     <div className="space-y-4">
       <section>
-        <h1 className="text-xl font-bold">Rewards</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">Rewards</h1>
+          <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] text-slate-400">
+            sumber: {source === 'supabase' ? 'database (Supabase)' : 'katalog kurasi F0'}
+          </span>
+        </div>
         <p className="text-sm text-slate-400">Katalog platform penghasil reward — kurasi manual F0.</p>
       </section>
 

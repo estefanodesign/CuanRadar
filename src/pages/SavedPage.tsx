@@ -1,14 +1,17 @@
 // CuanRadar — Saved (PRD §50; lokal di BUILD 1, sinkron akun di Fase 2)
-import { useState } from 'react'
-import { getSeedPlatformById } from '../lib/seed'
+import { useMemo, useState } from 'react'
+import { usePlatforms } from '../lib/platforms'
 import { getSavedIds, toggleSaved } from '../lib/savedApps'
 import { RewardCard } from '../components/RewardCard'
 import { EmptyState } from '../components/EmptyState'
+import type { Platform } from '../types'
 
 export function SavedPage() {
   const [, setVersion] = useState(0)
   const saved = getSavedIds()
-  const items = saved.map((id) => getSeedPlatformById(id)).filter((p): p is NonNullable<typeof p> => Boolean(p))
+  const { platforms } = usePlatforms()
+  const byId = useMemo(() => new Map(platforms.map((p) => [p.id, p])), [platforms])
+  const items = saved.map((id) => byId.get(id)).filter((p): p is Platform => Boolean(p))
 
   return (
     <div className="space-y-4">
