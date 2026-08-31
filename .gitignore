@@ -30,3 +30,6 @@ npm-debug.log*
 # vercel / cloudflare
 .vercel
 .wrangler
+
+# supabase cli
+supabase/.temp/
