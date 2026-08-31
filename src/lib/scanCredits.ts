@@ -64,9 +64,10 @@ async function fetchCredits(plan: PlanId): Promise<ScanCreditsState | null> {
 }
 
 /** Kuota harian: dari scan_credits bila user login & tersedia; kalau tidak, dari config plan (jujur). */
-export function useScanCredits(): { credits: ScanCreditsState; loading: boolean } {
+export function useScanCredits(): { credits: ScanCreditsState; loading: boolean; refresh: () => void } {
   const { user } = useAuth()
   const defaultPlan = getPlan(DEFAULT_PLAN)
+  const [tick, setTick] = useState(0)
   const [credits, setCredits] = useState<ScanCreditsState>({
     plan: defaultPlan.name,
     quickUsedToday: 0,
@@ -108,9 +109,11 @@ export function useScanCredits(): { credits: ScanCreditsState; loading: boolean 
     return () => {
       cancelled = true
     }
-  }, [user, defaultPlan])
+  }, [user, defaultPlan, tick])
 
-  return { credits, loading }
+  const refresh = () => setTick((t) => t + 1)
+
+  return { credits, loading, refresh }
 }
 
 // ——— Governor dari persentase penggunaan (frontend) ———

@@ -59,12 +59,12 @@ UI · authentication · database · navigation · profile · rewards foundation 
 | 8 | **Integrasi scan.mjs + CLI** | ✅ Selesai | cache-first → DB → discovery; budget gate deep scan; dedup vs katalog (hindari dupe Melolo/ReelRich); skor per kandidat; cost tracking; `--history` catat `scan_history` (dibaca UI) |
 | 9 | **Verifikasi** | ✅ Selesai | Unit test engine (scoring/verify/calc/cache/budget) hijau; Quick Scan CLI: `Sumber: cache` + Governor NORMAL + scan_history tercatat; typecheck + build hijau (initial gzip 138,44 kB) |
 
-**Catatan:** edge function `GET /api/scan/:id` (untuk `pollOnce` nyata) masih TODO — saat ini `useScanPoll` membaca `scan_history` bila ada (CLI `--history` sudah menuliskannya) dan fallback ke hasil lokal.
+**Catatan:** edge function `scan` SUDAH diimplementasikan (`supabase/functions/scan/index.ts`): quick = DB-first server-side, deep = discovery+extraction+review queue, kuota dikonsumsi server-side saat scan berjalan (klien tidak pernah menurunkan kuota di klik). **Deploy masih menunggu user** (perintah di `docs/DEPLOYMENT.md` §3.5). `public/_redirects` ditambahkan (SPA fallback — memperbaiki error deep-link seperti `/app/login` di Pages).
 
 ## TODO setelah BUILD 3 (menuju BUILD 4)
 
-- [ ] Edge function Supabase: `POST /api/scan` (enqueue) + `GET /api/scan/:id` (baca scan_history) → sambungkan `pollOnce()` di `src/lib/scan.ts`.
+- [ ] **Deploy edge function** (user): `npx supabase login` → `npx supabase link --project-ref <ref>` → `npx supabase functions deploy scan` → `npx supabase secrets set DEEPSEEK_API_KEY=… SEARCH_PROVIDER=serper SEARCH_API_KEY=… SUPABASE_SERVICE_ROLE_KEY=…`.
+- [ ] Re-koneksi Git Cloudflare Pages (auto-deploy) — build terbaru (dengan `_redirects` + edge function wiring) akan live.
 - [ ] Seed `reward_offers` (estimated_menit, reward_value) via kurasi → `EstimationCalculator` beralih `basedOn: 'data'`.
-- [ ] Review queue UI (10 kandidat menunggu) + alur tinjauan editor.
-- [ ] `scan_credits` usage update per scan (kuota real berkurang).
+- [ ] Review queue UI (10+ kandidat menunggu) + alur tinjauan editor.
 - [ ] BUILD 4: reliability, edge cases, security hardening, prompt optimization, audit touch target ≥44px.

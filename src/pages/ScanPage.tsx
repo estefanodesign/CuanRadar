@@ -1,10 +1,14 @@
 // CuanRadar — AI Scan (PRD §52–54, §63; Appendix A9)
-// BUILD 3: Quick Scan memakai state machine (PRD §62) + hasil DB-first nyata. Kuota dari scan_credits.
-// Deep Scan (discovery/extraction AI) berjalan server-side — di sini menampilkan state & pesan jujur.
-// Polling baca scan_history bila tersedia; fallback lokal bila server belum aktif (jujur, tidak mengarang).
+// BUILD 3: Scan dijalankan lewat edge function Supabase (server-side).
+//   - Quick Scan: DB-first (PRD §11/§14) — cache_completed/limited, TANPA AI bila data cukup.
+//   - Deep Scan: discovery (search) → ekstraksi AI → review queue → completed.
+// Kuota dikonsumsi SERVER-SIDE hanya saat scan benar-benar berjalan (PRD §39 v1.2);
+// klien tidak pernah menurunkan kuota pada klik.
+// Fallback: bila Supabase belum dikonfigurasi, Quick Scan memakai hasil lokal (jujur, tidak mengarang).
 import { useState } from 'react'
 import { usePlatforms, useRefetchPlatforms } from '../lib/platforms'
-import { useScanPoll, runQuickScanLocal, minNeeded, countByCategory } from '../lib/scan'
+import { startScanRemote, runQuickScanLocal } from '../lib/scan'
+import { isSupabaseConfigured } from '../lib/supabase'
 import { ScanControls, type ScanType } from '../components/ScanControls'
 import { RewardCard } from '../components/RewardCard'
 import { getSavedIds, toggleSaved } from '../lib/savedApps'
@@ -14,34 +18,57 @@ import { GovernorBanner } from '../components/GovernorBanner'
 import { CacheStatus } from '../components/CacheStatus'
 import { useScanCredits, useGovernor } from '../lib/scanCredits'
 import { ProvenanceBadge } from '../components/ProvenanceBadge'
-import type { Category } from '../types'
+import type { Category, ScanPollResult } from '../types'
 
 export function ScanPage() {
   const [scanType, setScanType] = useState<ScanType>('quick')
   const [category, setCategory] = useState<Category | 'all'>('all')
-  const [started, setStarted] = useState(false)
+  const [poll, setPoll] = useState<ScanPollResult | null>(null)
+  const [scanning, setScanning] = useState(false)
   const [, setSavedVersion] = useState(0)
   const saved = getSavedIds()
   const { platforms, source, dataUpdatedAt } = usePlatforms()
   const refetch = useRefetchPlatforms()
-  const { credits } = useScanCredits()
+  const { credits, refresh } = useScanCredits()
   const governor = useGovernor(credits)
 
-  // Polling abstraction: Quick Scan selesai sinkron; Deep Scan menunggu server (pollOnce → null sekarang).
-  const initialPoll = started
-    ? scanType === 'quick'
-      ? runQuickScanLocal(platforms, category)
-      : { id: `deep-${Date.now()}`, state: 'discovering' as const, source: 'database' as const, results: [], candidates: 0 }
-    : null
-  const { poll } = useScanPoll(initialPoll)
-
   const results = poll?.results ?? []
-  const scanned = Boolean(poll)
-  const done = poll ? poll.state === 'completed' || poll.state === 'cache_completed' || poll.state === 'failed' || poll.state === 'limited' : false
-  const isDeepRunning = scanType === 'deep' && scanned && !done
+  const done = poll ? ['completed', 'cache_completed', 'failed', 'limited'].includes(poll.state) : false
+  const isDeepRunning = scanType === 'deep' && scanning
 
-  const available = countByCategory(platforms, category)
-  const minNeededN = minNeeded(category)
+  async function handleScan() {
+    setScanning(true)
+    setPoll(
+      scanType === 'deep'
+        ? { id: `deep-${Date.now()}`, state: 'discovering', source: 'database', results: [], candidates: 0 }
+        : { id: `quick-${Date.now()}`, state: 'checking_cache', source: 'database', results: [], candidates: 0 },
+    )
+    try {
+      const result = isSupabaseConfigured()
+        ? await startScanRemote({ type: scanType, category })
+        : scanType === 'quick'
+          ? runQuickScanLocal(platforms, category)
+          : (() => {
+              throw new Error('Deep Scan membutuhkan edge function server (deploy: lihat docs/DEPLOYMENT.md)')
+            })()
+      setPoll(result)
+      refresh() // kuota server terbaru setelah scan benar-benar berjalan
+    } catch (err) {
+      setPoll({
+        id: `err-${Date.now()}`,
+        state: 'failed',
+        source: 'database',
+        results: [],
+        candidates: 0,
+        error: err instanceof Error ? err.message : 'Scan gagal',
+      })
+    } finally {
+      setScanning(false)
+    }
+  }
+
+  const available = category === 'all' ? platforms.length : platforms.filter((p) => p.category === category).length
+  const minNeededN = category === 'all' ? 12 : ({ entertainment: 4, shopping: 4, wallet: 2, lainnya: 2 } as Record<Category, number>)[category]
 
   return (
     <div className="space-y-5">
@@ -49,6 +76,7 @@ export function ScanPage() {
         <h1 className="text-xl font-bold">AI Scan</h1>
         <p className="text-sm text-slate-400">
           Sisa kuota hari ini: ⚡ {credits.quickRemaining} quick · 🔍 {credits.deepRemaining} deep
+          {credits.source === 'config' ? ' (kuota statis — masuk untuk kuota server)' : ''}
         </p>
       </section>
 
@@ -58,46 +86,45 @@ export function ScanPage() {
         <ScanControls scanType={scanType} onScanTypeChange={setScanType} category={category} onCategoryChange={setCategory} />
         <button
           type="button"
-          onClick={() => setStarted(true)}
-          disabled={isDeepRunning}
+          onClick={() => void handleScan()}
+          disabled={scanning}
           className="mt-4 w-full rounded-xl bg-emerald-500 px-3 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:opacity-60"
         >
-          {isDeepRunning ? 'Memindai…' : scanType === 'quick' ? '⚡ SCAN' : '🔍 SCAN'}
+          {scanning ? 'Memindai…' : scanType === 'quick' ? '⚡ SCAN' : '🔍 SCAN'}
         </button>
         <p className="mt-2 text-[11px] text-slate-500">
           Kecukupan data ({category === 'all' ? 'semua kategori' : category}): {available}/{minNeededN} platform ·{' '}
-          {available >= minNeededN ? 'cukup — hasil dari database' : 'kurang — discovery otomatis via engine (BUILD 3)'}
+          {available >= minNeededN ? 'cukup — hasil dari database' : 'kurang — discovery otomatis via engine'}
         </p>
       </section>
 
       <CacheStatus dataUpdatedAt={dataUpdatedAt} source={source} onRefresh={refetch} />
 
-      {!scanned ? (
+      {!poll ? (
         <EmptyState
           title="Mulai scan pertama Anda"
           description="Kami memeriksa peluang reward terkini. Scan pertama mungkin sedikit lebih lama."
         />
       ) : isDeepRunning ? (
         <>
-          <ScanProgress state={poll?.state ?? 'discovering'} candidates={0} />
-          <EmptyState
-            title="Deep Scan berjalan server-side"
-            description="Engine discovery & ekstraksi siap di engine/ (jalankan npm run scan:deep dengan kunci AI). Integrasi edge function penuh hadir di BUILD 3 — polling otomatis saat API aktif."
-          />
+          <ScanProgress state="discovering" candidates={0} />
+          <EmptyState title="Deep Scan berjalan server-side" description="Mencari peluang baru via search & AI — hasil masuk review queue sebelum dipublikasikan." />
         </>
       ) : done ? (
-        results.length === 0 ? (
+        poll.state === 'failed' ? (
+          <EmptyState title="Scan gagal" description={poll.error ?? 'Terjadi kesalahan. Coba lagi nanti.'} />
+        ) : results.length === 0 ? (
           <>
-            {poll?.state === 'limited' ? <ScanProgress state="limited" candidates={0} /> : null}
+            {poll.state === 'limited' ? <ScanProgress state="limited" candidates={0} /> : null}
             <EmptyState title="Belum ada peluang reward pada kategori ini" description="Coba kategori lain atau jalankan scan lagi nanti." />
           </>
         ) : (
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold">
-                {poll?.state === 'cache_completed' ? `${results.length} peluang ditemukan` : `${results.length} peluang (hasil tersedia)`}
+                {poll.state === 'cache_completed' ? `${results.length} peluang ditemukan` : `${results.length} kandidat (hasil baru)`}
               </h2>
-              <ProvenanceBadge provenance={poll?.source === 'search' ? 'search_new' : 'database'} />
+              <ProvenanceBadge provenance={poll.source === 'search' ? 'search_new' : 'database'} />
             </div>
             {results.map((p) => (
               <RewardCard
@@ -108,20 +135,22 @@ export function ScanPage() {
                   toggleSaved(p.id)
                   setSavedVersion((v) => v + 1)
                 }}
-                provenance={poll?.source === 'search' ? 'search_new' : 'database'}
+                provenance={poll.source === 'search' ? 'search_new' : 'database'}
               />
             ))}
-            {poll?.source === 'search' ? (
-              <p className="text-[11px] text-slate-500">Hasil dari pencarian baru — menunggu review sebelum dipublikasikan (PRD Appendix A6).</p>
+            {poll.source === 'search' ? (
+              <p className="text-[11px] text-slate-500">
+                Kandidat dari pencarian baru — masuk review queue, belum diverifikasi (PRD Appendix A6). Skor dihitung sementara sisi-klien.
+              </p>
             ) : null}
           </section>
         )
       ) : (
-        <ScanProgress state={poll?.state ?? 'queued'} candidates={poll?.candidates ?? 0} />
+        <ScanProgress state={poll.state} candidates={poll.candidates} />
       )}
 
       <p className="text-[11px] text-slate-600">
-        Provenance: hasil dari database terverifikasi / cache akan ditandai otomatis saat engine scan aktif (PRD Appendix A9).
+        Provenance: database terverifikasi / cache / hasil baru — selalu ditampilkan (PRD Appendix A9).
       </p>
     </div>
   )

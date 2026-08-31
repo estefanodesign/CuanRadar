@@ -66,6 +66,27 @@ Cloudflare Pages Git integration (connect repo GitHub)
 - Supabase region **Singapore** (terdekat Indonesia); frontend dilayani CDN Cloudflare dari POP terdekat (LCP < 2,5 dtk di 4G tetap jadi target — ARCHITECTURE §8).
 - Domain: rekomendasi **`.id`** (cuanradar.id) untuk pasar lokal + SEO; alternatif `.com`. Cek ketersediaan = TODO F0 yang belum dieksekusi.
 
+### 3.5 Edge function `scan` (BUILD 3) — deploy & secrets
+
+Frontend memanggil `supabase.functions.invoke('scan', …)` untuk Quick (DB-first server-side) & Deep Scan (discovery + review queue). Kuota dikonsumsi **server-side** saat scan berjalan (bukan klik).
+
+```powershell
+# sekali (login + link project)
+npx supabase login
+npx supabase link --project-ref <PROJECT_REF>   # dari Supabase dashboard → Settings → General
+
+# deploy fungsi
+npx supabase functions deploy scan
+
+# set secrets (nilai sama dengan .env lokal Anda; service_role dari dashboard)
+npx supabase secrets set DEEPSEEK_API_KEY=<key>
+npx supabase secrets set SEARCH_PROVIDER=serper
+npx supabase secrets set SEARCH_API_KEY=<key>
+npx supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<key>
+```
+
+> `SUPABASE_URL` & `SUPABASE_ANON_KEY` otomatis tersedia di runtime edge function. Jangan pernah menyimpan service_role di frontend (AI_RULES §9).
+
 ## 4. Checklist per Fase
 
 **F1 (sekarang):**

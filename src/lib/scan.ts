@@ -10,6 +10,7 @@
 // Saat edge function aktif, cukup ganti sumber polling → GET /api/scan/:id; antarmuka tetap sama.
 import { useEffect, useRef, useState } from 'react'
 import type { Platform, ScanPollResult, ScanStage, ScanState, Category } from '../types'
+import { supabase } from './supabase'
 
 // Langkah progres UI (subset state machine, berurutan). 'ranking' adalah langkah terakhir sebelum selesai.
 export const SCAN_STAGES: ScanStage[] = [
@@ -92,6 +93,31 @@ export function runQuickScanLocal(platforms: Platform[], category: Category | 'a
     source: 'database',
     results,
     candidates: 0,
+  }
+}
+
+// ——— Scan via edge function (server-side; BUILD 3) ———
+// Konsumsi kuota terjadi SERVER-SIDE (edge function memeriksa & menambah scan_credits)
+// hanya ketika scan benar-benar berjalan — bukan saat klik tombol (PRD §39 v1.2).
+
+export interface ScanStartInput {
+  type: 'quick' | 'deep'
+  category: Category | 'all'
+}
+
+/** Jalankan scan lewat Supabase edge function `/scan`. Fallback: caller pakai runQuickScanLocal bila tidak dikonfigurasi. */
+export async function startScanRemote(input: ScanStartInput): Promise<ScanPollResult> {
+  if (!supabase) throw new Error('supabase-not-configured')
+  const { data, error } = await supabase.functions.invoke('scan', { body: input })
+  if (error) throw new Error(error.message || 'scan failed')
+  if (data && typeof data === 'object' && 'error' in data && data.error) throw new Error(String(data.error))
+  const d = (data ?? {}) as { id?: string; state?: ScanState; source?: string; results?: Platform[]; candidates?: number }
+  return {
+    id: d.id ?? `scan-${Date.now()}`,
+    state: d.state ?? 'completed',
+    source: d.source === 'search' ? 'search' : 'database',
+    results: d.results ?? [],
+    candidates: d.candidates ?? 0,
   }
 }
 
