@@ -125,6 +125,7 @@ function PlatformChip({ p }: { p: Platform }) {
 
 export function LandingPage() {
   const platforms = getSeedPlatforms().slice(0, 12)
+  const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly')
 
   return (
     <div className="min-h-dvh bg-cream text-jade-dark">
@@ -279,21 +280,44 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Harga (tetap, selaras tema) */}
-      <section id="harga" className="border-b border-gold/20 bg-paper py-14">
+      {/* Harga (pola: toggle Bulanan/Tahunan + 3 kartu, tengah highlight — warna CuanRadar jade/gold) */}
+      <section id="harga" className="border-b border-gold/20 bg-jade-dark py-20 text-cream">
         <div className="mx-auto max-w-5xl px-4">
-          <h2 className="text-center font-display text-2xl font-bold tracking-wide text-jade md:text-3xl">HARGA</h2>
-          <p className="mx-auto mt-2 max-w-md text-center text-jade/70">
+          <h2 className="text-center font-display text-2xl font-bold tracking-wide md:text-3xl">
+            HARGA <span className="text-gold">SEDERHANA</span>
+          </h2>
+          <p className="mx-auto mt-2 max-w-md text-center text-cream/60">
             Mulai gratis. Upgrade hanya bila butuh kapasitas lebih — posisi ranking tidak pernah bisa dibeli.
           </p>
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
+
+          <div className="mt-6 flex justify-center">
+            <div className="inline-flex rounded-full border border-gold/30 bg-jade p-1">
+              {(['monthly', 'yearly'] as const).map((b) => (
+                <button
+                  key={b}
+                  type="button"
+                  onClick={() => setBilling(b)}
+                  className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+                    billing === b ? 'bg-gold text-jade' : 'text-cream/70 hover:text-gold'
+                  }`}
+                >
+                  {b === 'monthly' ? 'Bulanan' : 'Tahunan (hemat 17%)'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
             {([PLANS.free, PLANS.pro, PLANS.pro_plus] as const).map((plan) => {
               const highlight = plan.id === 'pro'
+              const isYearly = billing === 'yearly'
+              const price = isYearly ? (plan.priceAnnual ?? plan.priceMonthly) : plan.priceMonthly
+              const period = isYearly && plan.priceAnnual ? '/thn' : '/bln'
               return (
                 <div
                   key={plan.id}
-                  className={`relative rounded-2xl border p-6 ${
-                    highlight ? 'border-gold bg-jade text-cream' : 'border-gold/30 bg-paper text-jade-dark'
+                  className={`relative flex flex-col rounded-2xl border p-6 ${
+                    highlight ? 'border-gold bg-jade-soft' : 'border-gold/25 bg-jade'
                   }`}
                 >
                   {highlight ? (
@@ -302,20 +326,26 @@ export function LandingPage() {
                     </p>
                   ) : null}
                   <h3 className="font-display text-sm font-bold tracking-wide">{plan.name.toUpperCase()}</h3>
-                  <p className={`mt-2 text-3xl font-bold ${highlight ? 'text-gold' : 'text-jade'}`}>
-                    {plan.priceMonthly ? `Rp${plan.priceMonthly.toLocaleString('id-ID')}` : 'Gratis'}
-                    {plan.priceMonthly ? <span className="text-sm font-normal opacity-70">/bln</span> : null}
+                  <p className="mt-1 text-xs text-cream/60">
+                    {plan.id === 'free' ? 'Untuk mulai mencoba' : plan.id === 'pro' ? 'Untuk pengejar cuan serius' : 'Untuk power user'}
                   </p>
-                  <ul className={`mt-4 space-y-2 text-sm ${highlight ? 'text-cream/80' : 'text-jade/70'}`}>
-                    <li>⚡ {plan.quickPerDay}× Quick Scan/hari</li>
-                    <li>🔍 {plan.deepPerDay}× Deep Scan/hari</li>
-                    <li>⚖️ Compare hingga {plan.compareOffers} aplikasi</li>
-                    <li>🔖 Tracker {plan.trackerLimit === null ? 'tanpa batas' : `${plan.trackerLimit} entri`}</li>
+                  <p className={`mt-3 text-3xl font-bold ${highlight ? 'text-gold' : 'text-cream'}`}>
+                    {price ? `Rp${price.toLocaleString('id-ID')}` : 'Gratis'}
+                    {price ? <span className="text-sm font-normal text-cream/60">{period}</span> : null}
+                  </p>
+                  <ul className={`mt-4 flex-1 space-y-2 text-sm ${highlight ? 'text-cream/85' : 'text-cream/70'}`}>
+                    <li className="flex items-center gap-2"><span className="text-gold">✓</span> ⚡ {plan.quickPerDay}× Quick Scan/hari</li>
+                    <li className="flex items-center gap-2"><span className="text-gold">✓</span> 🔍 {plan.deepPerDay}× Deep Scan/hari</li>
+                    <li className="flex items-center gap-2"><span className="text-gold">✓</span> ⚖️ Compare hingga {plan.compareOffers} aplikasi</li>
+                    <li className="flex items-center gap-2"><span className="text-gold">✓</span> 🔖 Tracker {plan.trackerLimit === null ? 'tanpa batas' : `${plan.trackerLimit} entri`}</li>
+                    <li className="flex items-center gap-2"><span className="text-gold">✓</span> 🔔 Alert {plan.alertLevel === 'mingguan' ? 'mingguan' : plan.alertLevel === 'real_time' ? 'real-time' : 'real-time + push'}</li>
                   </ul>
                   <Link
                     to="/app"
-                    className={`mt-5 block rounded-full px-4 py-2.5 text-center text-sm font-semibold transition ${
-                      highlight ? 'bg-gold text-jade hover:bg-gold-soft' : 'border border-gold/50 text-jade hover:bg-gold hover:text-jade'
+                    className={`mt-6 block rounded-full px-4 py-2.5 text-center text-sm font-semibold transition ${
+                      highlight
+                        ? 'bg-gold text-jade hover:bg-gold-soft'
+                        : 'border border-gold/40 text-cream hover:bg-gold hover:text-jade'
                     }`}
                   >
                     {plan.id === 'free' ? 'Mulai gratis' : 'Upgrade (Fase 2)'}
@@ -327,34 +357,57 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* FAQ */}
-      <section id="faq" className="border-b border-gold/20 bg-cream py-14">
+      {/* FAQ (pola: heading + accordion bertumpuk, panah) */}
+      <section id="faq" className="border-b border-gold/20 bg-jade-dark py-20 text-cream">
         <div className="mx-auto max-w-2xl px-4">
-          <h2 className="text-center font-display text-2xl font-bold tracking-wide text-jade">FAQ</h2>
-          <div className="mt-6 space-y-3">
+          <h2 className="text-center font-display text-2xl font-bold tracking-wide md:text-3xl">
+            PERTANYAAN <span className="text-gold">UMUM</span>
+          </h2>
+          <div className="mt-8 space-y-3">
             {FAQS.map((f) => (
-              <details key={f.q} className="rounded-xl border border-gold/30 bg-paper p-4">
-                <summary className="cursor-pointer text-sm font-semibold text-jade">{f.q}</summary>
-                <p className="mt-2 text-sm leading-relaxed text-jade/70">{f.a}</p>
+              <details key={f.q} className="group rounded-2xl border border-gold/25 bg-jade px-5 py-4">
+                <summary className="flex cursor-pointer items-center justify-between gap-3 text-sm font-semibold text-cream">
+                  {f.q}
+                  <span className="text-gold transition-transform duration-200 ease-out group-open:rotate-180">▾</span>
+                </summary>
+                <p className="mt-2 text-sm leading-relaxed text-cream/70">{f.a}</p>
               </details>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 6. CTA */}
-      <section className="bg-jade py-16 text-center text-cream">
-        <div className="mx-auto max-w-2xl px-4">
-          <h2 className="font-display text-2xl font-bold tracking-wide md:text-3xl">
-            SIAP MENANGKAP <span className="text-gold">SINYAL CUAN?</span>
-          </h2>
-          <p className="mt-2 text-cream/70">Bergabung dengan pengguna yang sudah mengoptimalkan waktu mereka.</p>
-          <Link
-            to="/app"
-            className="mt-6 inline-block rounded-full bg-gold px-8 py-3 text-sm font-bold text-jade transition hover:bg-jade-soft hover:text-gold"
-          >
-            Mulai Sekarang — Gratis
-          </Link>
+      {/* 6. CTA (pola: split — kiri teks+tombol, kanan grid 2×2 kartu benefit) */}
+      <section className="bg-jade-dark py-20 text-cream">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 md:grid-cols-2 md:items-center">
+          <div>
+            <h2 className="font-display text-2xl font-bold leading-tight md:text-3xl">
+              SIAP MENANGKAP <span className="text-gold">SINYAL CUAN?</span>
+            </h2>
+            <p className="mt-2 text-cream/70">Bergabung dengan pengguna yang sudah mengoptimalkan waktu mereka.</p>
+            <Link
+              to="/app"
+              className="mt-6 inline-block rounded-full bg-gold px-8 py-3 text-sm font-bold text-jade transition hover:bg-gold-soft"
+            >
+              Mulai Sekarang — Gratis
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { icon: '📊', title: 'CuanScore', desc: '6 faktor deterministik' },
+              { icon: '🛡️', title: 'Anti-Scam', desc: 'Rubrik 8 pemeriksaan' },
+              { icon: '🔔', title: 'Alert Real-time', desc: 'Peluang baru terpantau' },
+              { icon: '🧭', title: '4 Kategori', desc: 'Entertainment · Shopping · Wallet · Lainnya' },
+            ].map((b) => (
+              <div key={b.title} className="rounded-2xl border border-gold/25 bg-jade p-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-gold/40 bg-gold/10 text-lg">
+                  {b.icon}
+                </div>
+                <p className="mt-3 text-sm font-semibold text-gold">{b.title}</p>
+                <p className="mt-0.5 text-xs text-cream/60">{b.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
