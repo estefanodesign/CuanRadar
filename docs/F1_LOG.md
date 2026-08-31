@@ -59,7 +59,7 @@ UI · authentication · database · navigation · profile · rewards foundation 
 | 8 | **Integrasi scan.mjs + CLI** | ✅ Selesai | cache-first → DB → discovery; budget gate deep scan; dedup vs katalog (hindari dupe Melolo/ReelRich); skor per kandidat; cost tracking; `--history` catat `scan_history` (dibaca UI) |
 | 9 | **Verifikasi** | ✅ Selesai | Unit test engine (scoring/verify/calc/cache/budget) hijau; Quick Scan CLI: `Sumber: cache` + Governor NORMAL + scan_history tercatat; typecheck + build hijau (initial gzip 138,44 kB) |
 
-**Catatan:** edge function `scan` SUDAH diimplementasikan (`supabase/functions/scan/index.ts`): quick = DB-first server-side, deep = discovery+extraction+review queue, kuota dikonsumsi server-side saat scan berjalan (klien tidak pernah menurunkan kuota di klik). **Deploy masih menunggu user** (perintah di `docs/DEPLOYMENT.md` §3.5). `public/_redirects` ditambahkan (SPA fallback — memperbaiki error deep-link seperti `/app/login` di Pages).
+**Catatan:** edge function `scan` SUDAH diimplementasikan DAN **TELAH DI-DEPLOY** (2026-08-31, project `xtwowaolrroqdxpbwsvg`): quick = DB-first server-side (filter kategori terverifikasi), deep = discovery+extraction+review queue (terverifikasi: 3 kandidat wallet masuk review queue). Kuota dikonsumsi server-side saat scan berjalan. `public/_redirects` SPA fallback aktif — **`cuanradar.pages.dev` live dengan build terbaru (wrangler direct upload), semua deep-link 200**.
 
 ## TODO setelah BUILD 3 (menuju BUILD 4)
 

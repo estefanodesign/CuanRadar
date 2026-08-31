@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   const url = Deno.env.get('SUPABASE_URL')
   const anon = Deno.env.get('SUPABASE_ANON_KEY')
-  const serviceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  const serviceRole = Deno.env.get('SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (!url || !anon || !serviceRole) {
     return json({ error: 'Fungsi belum dikonfigurasi (secrets)' }, 500)
   }
@@ -204,13 +204,12 @@ Deno.serve(async (req) => {
     }
 
     if (type === 'quick') {
-      // DB-first (PRD §11): tidak menyentuh search/AI bila data cukup
-      const { data: rows } = await admin.from('reward_apps').select('*').in('category', category === 'all' ? CATEGORIES : [category])
-      const all = await admin.from('reward_apps').select('id', { count: 'exact', head: true })
-      const platforms = rows ?? []
-      const counts = { entertainment: 0, shopping: 0, wallet: 0, lainnya: 0 }
-      for (const p of platforms) if (counts[p.category] !== undefined) counts[p.category] += 1
-      const available = category === 'all' ? (all.count ?? platforms.length) : platforms.length
+      // DB-first (PRD §11): tidak menyentuh search/AI bila data cukup.
+      // Fetch semua + filter di JS (lebih robust daripada PostgREST .in pada kolom enum).
+      const { data: allRows } = await admin.from('reward_apps').select('*')
+      const rows = allRows ?? []
+      const platforms = category === 'all' ? rows : rows.filter((p) => p.category === category)
+      const available = platforms.length
       const needed = category === 'all' ? MIN_ALL : MIN_PER_CATEGORY[category]
       const sufficient = available >= needed
       const state = sufficient ? 'cache_completed' : 'limited'
