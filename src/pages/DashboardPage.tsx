@@ -1,10 +1,12 @@
 // CuanRadar — Dashboard (PRD §51): greeting, kuota, tombol scan, rekomendasi, saved, recent scan
 import { Link } from '@tanstack/react-router'
-import { getPlan, DEFAULT_PLAN } from '../config/plans'
-import { usePlatforms } from '../lib/platforms'
+import { usePlatforms, useRefetchPlatforms } from '../lib/platforms'
+import { useScanCredits, useGovernor } from '../lib/scanCredits'
 import { getSavedIds, toggleSaved } from '../lib/savedApps'
 import { RewardCard } from '../components/RewardCard'
 import { EmptyState } from '../components/EmptyState'
+import { GovernorBanner } from '../components/GovernorBanner'
+import { CacheStatus } from '../components/CacheStatus'
 import { useState } from 'react'
 
 function greeting(): string {
@@ -16,8 +18,10 @@ function greeting(): string {
 }
 
 export function DashboardPage() {
-  const plan = getPlan(DEFAULT_PLAN)
-  const { platforms, source } = usePlatforms()
+  const { platforms, source, dataUpdatedAt } = usePlatforms()
+  const refetch = useRefetchPlatforms()
+  const { credits } = useScanCredits()
+  const governor = useGovernor(credits)
   const saved = getSavedIds()
   const [, setSavedVersion] = useState(0)
 
@@ -32,19 +36,21 @@ export function DashboardPage() {
         </p>
       </section>
 
+      <GovernorBanner governor={governor} />
+
       <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Scan Credits (Plan {plan.name})</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Scan Credits (Plan {credits.plan})</p>
           <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] text-emerald-300">Kuota harian</span>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-3">
           <div className="rounded-xl bg-slate-800/60 p-3">
             <p className="text-xs text-slate-400">Quick Scan</p>
-            <p className="text-lg font-bold">{plan.quickPerDay}×/hari</p>
+            <p className="text-lg font-bold">{credits.quickRemaining}× tersisa</p>
           </div>
           <div className="rounded-xl bg-slate-800/60 p-3">
             <p className="text-xs text-slate-400">Deep Scan</p>
-            <p className="text-lg font-bold">{plan.deepPerDay}×/hari</p>
+            <p className="text-lg font-bold">{credits.deepRemaining}× tersisa</p>
           </div>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2">
@@ -62,6 +68,8 @@ export function DashboardPage() {
           </Link>
         </div>
       </section>
+
+      <CacheStatus dataUpdatedAt={dataUpdatedAt} source={source} onRefresh={refetch} />
 
       <section>
         <div className="mb-2 flex items-center justify-between">
@@ -83,9 +91,6 @@ export function DashboardPage() {
             />
           ))}
         </div>
-        <p className="mt-2 text-[11px] text-slate-600">
-          Sumber: {source === 'supabase' ? 'database terverifikasi (Supabase)' : 'kurasi manual F0'} · skor & engine AI penuh hadir di BUILD 3.
-        </p>
       </section>
 
       <section>

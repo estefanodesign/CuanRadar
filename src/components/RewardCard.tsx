@@ -1,5 +1,8 @@
 // CuanRadar — Reward Card (PRD §55)
 // Menampilkan dua sumbu terpisah: badge verifikasi (informasi) & badge risiko (platform).
+// BUILD 3: + CuanScore, provenance per hasil (Appendix A9), tautan ke halaman detail.
+import { useMemo } from 'react'
+import { Link } from '@tanstack/react-router'
 import type { Platform } from '../types'
 import {
   CATEGORY_LABELS,
@@ -10,29 +13,41 @@ import {
   getRiskLabel,
   getVerificationLabel,
 } from '../lib/format'
+import { scorePlatform } from '../lib/scoring'
 import { Badge } from './Badge'
+import { ScoreBadge } from './ScoreBadge'
+import { ProvenanceBadge, type Provenance } from './ProvenanceBadge'
 
 interface RewardCardProps {
   platform: Platform
   saved: boolean
   onToggleSave: (id: string) => void
+  /** Asal hasil (PRD Appendix A9). Default 'database' — hasil kurasi/DB terverifikasi. */
+  provenance?: Provenance
 }
 
-export function RewardCard({ platform, saved, onToggleSave }: RewardCardProps) {
+export function RewardCard({ platform, saved, onToggleSave, provenance = 'database' }: RewardCardProps) {
   const riskTone = platform.risk_level === 'rendah' ? 'green' : platform.risk_level === 'sedang' ? 'amber' : 'red'
   const verTone = platform.verification_status === 'verified' ? 'green' : platform.verification_status === 'partially_verified' ? 'amber' : 'slate'
+  const scored = useMemo(() => scorePlatform(platform), [platform])
+  const detailPath = `/app/rewards/${platform.slug || platform.id}`
 
   return (
     <article className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="truncate text-sm font-semibold text-slate-100">{platform.name}</h3>
+          <Link to={detailPath} className="block truncate text-sm font-semibold text-slate-100 transition hover:text-emerald-300">
+            {platform.name}
+          </Link>
           <p className="text-xs text-slate-500">
             {CATEGORY_LABELS[platform.category]} · {STATUS_LABELS[platform.status]}
             {platform.developer ? ` · ${platform.developer}` : ''}
           </p>
         </div>
-        <Badge tone={verTone}>{getVerificationLabel(platform.verification_status)}</Badge>
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <ScoreBadge score={scored.score} />
+          <ProvenanceBadge provenance={provenance} />
+        </div>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-1.5">
@@ -54,6 +69,7 @@ export function RewardCard({ platform, saved, onToggleSave }: RewardCardProps) {
 
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-800 pt-3">
         <div className="flex flex-wrap items-center gap-1.5">
+          <Badge tone={verTone}>{getVerificationLabel(platform.verification_status)}</Badge>
           <Badge tone={riskTone}>{getRiskLabel(platform.risk_level)}</Badge>
           <span className="text-[11px] text-slate-500">verif {formatDate(platform.last_verified_at)}</span>
         </div>
@@ -66,6 +82,12 @@ export function RewardCard({ platform, saved, onToggleSave }: RewardCardProps) {
           >
             {saved ? '✓ Tersimpan' : 'Simpan'}
           </button>
+          <Link
+            to={detailPath}
+            className="rounded-lg border border-emerald-500/40 px-2.5 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/15"
+          >
+            Detail
+          </Link>
           <a
             href={platform.website ?? undefined}
             target="_blank"

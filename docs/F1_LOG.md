@@ -43,9 +43,28 @@ UI · authentication · database · navigation · profile · rewards foundation 
 
 **Catatan:** Deep Scan discovery butuh `DEEPSEEK_API_KEY` + `SEARCH_PROVIDER`/`SEARCH_API_KEY` (free-tier Brave/Serper) — belum diisi user; engine menolak dengan pesan jelas (tidak mengarang, PRD §13/§18).
 
-## TODO setelah BUILD 2 (menuju BUILD 3)
+## BUILD 3 — Status (SELESAI, 2026-08-30)
 
-- [ ] Isi `DEEPSEEK_API_KEY` + `SEARCH_PROVIDER=brave|serper` + `SEARCH_API_KEY` di `.env`, lalu uji `npm run scan:deep -- --save`.
-- [ ] BUILD 3: verifikasi tiga sumbu + rubrik 8 pemeriksaan, kalkulasi & scoring 6 faktor (deterministik), cache (key+TTL), Budget Governor, cost tracking per scan, alert.
-- [ ] BUILD 3: integrasi edge function untuk scan via API (POST /api/scan → queue) — pengganti CLI.
-- [ ] Deploy edge function & migrasi tambahan bila schema berubah.
+**Kolaborasi:** Sesi Frontend (`docs/SESSIONS_FRONTEND.md` sesi 1–2) + backend sesi ini.
+
+| # | Tugas | Status | Catatan |
+|---|---|---|---|
+| 1 | **Frontend sesi 1**: Reward Detail, CuanScore 6 faktor (klien), provenance, WhyRecommended, link prioritas | ✅ Selesai | `src/lib/scoring.ts`, `ScoreBadge`, `ProvenanceBadge`, `RewardDetailPage` (`/app/rewards/:slug`), `RewardCard` diperluas |
+| 2 | **Frontend sesi 2**: Scan UX state machine + polling, kuota real `scan_credits`, cache/TTL + forced refresh, banner Budget Governor, estimasi & kalkulator asumsi | ✅ Selesai | `src/lib/scan.ts` (runQuickScanLocal + useScanPoll), `scanCredits.ts`, `CacheStatus`, `GovernorBanner`, `EstimationCalculator`, `ScanProgress` |
+| 3 | **Backend: engine scoring** | ✅ Selesai | `engine/scoring.mjs` — 6 faktor deterministik (server = sumber kebenaran; skala Reward/Effort: Rp20.000/jam = 1.0), stability dari reward_history, netral 0.5 |
+| 4 | **Backend: engine verify** | ✅ Selesai | `engine/verify.mjs` — rubrik 8 pemeriksaan → risk_level; fail kritis → terindikasi_scam |
+| 5 | **Backend: engine cache** | ✅ Selesai | `engine/cache.mjs` — key `country:category:type:hash`, TTL (72/24/6-24 jam, expired immediate); **fix: nama file aman Windows (':' ilegal → '_')** |
+| 6 | **Backend: engine budget** | ✅ Selesai | `engine/budget.mjs` — Governor 70/85/95/100%, split LLM/Search, estimasi biaya (PRD §40–43) |
+| 7 | **Backend: engine calc** | ✅ Selesai | `engine/calc.mjs` — estimasi harian/mingguan/bulanan/per-jam; data kurang → `{ok:false}` (PRD §30) |
+| 8 | **Integrasi scan.mjs + CLI** | ✅ Selesai | cache-first → DB → discovery; budget gate deep scan; dedup vs katalog (hindari dupe Melolo/ReelRich); skor per kandidat; cost tracking; `--history` catat `scan_history` (dibaca UI) |
+| 9 | **Verifikasi** | ✅ Selesai | Unit test engine (scoring/verify/calc/cache/budget) hijau; Quick Scan CLI: `Sumber: cache` + Governor NORMAL + scan_history tercatat; typecheck + build hijau (initial gzip 138,44 kB) |
+
+**Catatan:** edge function `GET /api/scan/:id` (untuk `pollOnce` nyata) masih TODO — saat ini `useScanPoll` membaca `scan_history` bila ada (CLI `--history` sudah menuliskannya) dan fallback ke hasil lokal.
+
+## TODO setelah BUILD 3 (menuju BUILD 4)
+
+- [ ] Edge function Supabase: `POST /api/scan` (enqueue) + `GET /api/scan/:id` (baca scan_history) → sambungkan `pollOnce()` di `src/lib/scan.ts`.
+- [ ] Seed `reward_offers` (estimated_menit, reward_value) via kurasi → `EstimationCalculator` beralih `basedOn: 'data'`.
+- [ ] Review queue UI (10 kandidat menunggu) + alur tinjauan editor.
+- [ ] `scan_credits` usage update per scan (kuota real berkurang).
+- [ ] BUILD 4: reliability, edge cases, security hardening, prompt optimization, audit touch target ≥44px.

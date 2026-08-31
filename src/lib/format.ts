@@ -1,5 +1,5 @@
 // CuanRadar — Util format & label (Bahasa Indonesia)
-import type { PayoutMethod, RiskLevel, RewardType, VerificationStatus } from '../types'
+import type { PayoutMethod, RiskLevel, RewardType, ScoreFactor, VerificationStatus } from '../types'
 
 // DB menyimpan uang sebagai integer minor unit (sen IDR) — ARCHITECTURE §3.
 // Fungsi ini menerima nilai MAJOR (Rupiah) untuk keperluan tampilan.
@@ -15,6 +15,18 @@ export function formatDate(iso: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
   return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(d)
+}
+
+/** Format selisih milidetik menjadi "baru saja / X menit lalu / X jam lalu / X hari lalu". */
+export function formatRelative(ms: number): string {
+  const sec = Math.round(ms / 1000)
+  if (sec < 60) return 'baru saja'
+  const min = Math.round(sec / 60)
+  if (min < 60) return `${min} menit lalu`
+  const hr = Math.round(min / 60)
+  if (hr < 24) return `${hr} jam lalu`
+  const day = Math.round(hr / 24)
+  return `${day} hari lalu`
 }
 
 export const CATEGORY_LABELS: Record<string, string> = {
@@ -79,4 +91,21 @@ export function getVerificationLabel(v: VerificationStatus): string {
     unverified: 'Belum terverifikasi',
   }
   return labels[v] ?? v
+}
+
+// ——— CuanScore (BUILD 3) ———
+export const SCORE_FACTOR_LABELS: Record<ScoreFactor, string> = {
+  reward_potential: 'Potensi reward',
+  verification: 'Verifikasi',
+  reward_effort: 'Reward / effort',
+  platform_risk: 'Risiko platform',
+  accessibility: 'Aksesibilitas',
+  reward_stability: 'Stabilitas reward',
+}
+
+/** Ringkas penilaian skor untuk aksesibilitas (0–100). */
+export function scoreTone(score: number): 'green' | 'amber' | 'slate' {
+  if (score >= 75) return 'green'
+  if (score >= 50) return 'amber'
+  return 'slate'
 }

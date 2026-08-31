@@ -9,6 +9,7 @@ const AppLayout = lazy(() => import('./components/AppLayout').then((m) => ({ def
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })))
 const ScanPage = lazy(() => import('./pages/ScanPage').then((m) => ({ default: m.ScanPage })))
 const RewardsPage = lazy(() => import('./pages/RewardsPage').then((m) => ({ default: m.RewardsPage })))
+const RewardDetailPage = lazy(() => import('./pages/RewardDetailPage').then((m) => ({ default: m.RewardDetailPage })))
 const ComparePage = lazy(() => import('./pages/ComparePage').then((m) => ({ default: m.ComparePage })))
 const SavedPage = lazy(() => import('./pages/SavedPage').then((m) => ({ default: m.SavedPage })))
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })))
@@ -37,6 +38,7 @@ const appRoute = createRoute({
 const appIndexRoute = createRoute({ getParentRoute: () => appRoute, path: '/', component: DashboardPage })
 const appScanRoute = createRoute({ getParentRoute: () => appRoute, path: '/scan', component: ScanPage })
 const appRewardsRoute = createRoute({ getParentRoute: () => appRoute, path: '/rewards', component: RewardsPage })
+const appRewardDetailRoute = createRoute({ getParentRoute: () => appRoute, path: '/rewards/$slug', component: RewardDetailPage })
 const appCompareRoute = createRoute({ getParentRoute: () => appRoute, path: '/compare', component: ComparePage })
 const appSavedRoute = createRoute({ getParentRoute: () => appRoute, path: '/saved', component: SavedPage })
 const appProfileRoute = createRoute({ getParentRoute: () => appRoute, path: '/profile', component: ProfilePage })
@@ -48,6 +50,7 @@ const routeTree = rootRoute.addChildren([
     appIndexRoute,
     appScanRoute,
     appRewardsRoute,
+    appRewardDetailRoute,
     appCompareRoute,
     appSavedRoute,
     appProfileRoute,

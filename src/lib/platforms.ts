@@ -2,7 +2,7 @@
 // UI memakai data dari tabel reward_apps (Supabase); bila belum dikonfigurasi/gagal,
 // fallback jujur ke data kurasi lokal F0 (provenance 'seed').
 import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { isSupabaseConfigured, supabase } from './supabase'
 import { getSeedPlatforms } from './seed'
 import type { Platform } from '../types'
@@ -16,6 +16,8 @@ export interface PlatformsState {
   platforms: Platform[]
   source: PlatformSource
   loading: boolean
+  /** ISO timestamp kapan data terakhir ter-refresh (0 = belum/seed). */
+  dataUpdatedAt: number
 }
 
 export function usePlatforms(): PlatformsState {
@@ -38,8 +40,14 @@ export function usePlatforms(): PlatformsState {
     staleTime: 5 * 60 * 1000,
   })
 
-  if (!configured) return { platforms: seed, source: 'seed', loading: false }
-  if (query.isLoading) return { platforms: seed, source: 'seed', loading: true }
-  if (query.error || !query.data) return { platforms: seed, source: 'seed', loading: false }
-  return { platforms: query.data.platforms, source: query.data.source, loading: false }
+  if (!configured) return { platforms: seed, source: 'seed', loading: false, dataUpdatedAt: 0 }
+  if (query.isLoading) return { platforms: seed, source: 'seed', loading: true, dataUpdatedAt: 0 }
+  if (query.error || !query.data) return { platforms: seed, source: 'seed', loading: false, dataUpdatedAt: 0 }
+  return { platforms: query.data.platforms, source: query.data.source, loading: false, dataUpdatedAt: query.dataUpdatedAt }
+}
+
+/** Forced refresh (bypass cache, PRD §37): invalidate query agar fetch ulang dari Supabase. */
+export function useRefetchPlatforms() {
+  const qc = useQueryClient()
+  return () => qc.invalidateQueries({ queryKey: ['platforms'], refetchType: 'all' })
 }

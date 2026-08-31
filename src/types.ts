@@ -83,3 +83,69 @@ export interface ScanResultItem {
   risk_level: RiskLevel
   provenance: 'database' | 'cache' | 'search_new'
 }
+
+// ——— CuanScore (BUILD 3) ———
+// Skema tunggal 6 faktor deterministik (PRD §32, VALIDATION_RUBRIC §5).
+// Nilai komponen 0–1; total = Σ(bobot × nilai) → 0–100.
+// Data kurang → netral 0.5 (tidak pernah nol, tidak dikarang).
+
+export type ScoreFactor =
+  | 'reward_potential'
+  | 'verification'
+  | 'reward_effort'
+  | 'platform_risk'
+  | 'accessibility'
+  | 'reward_stability'
+
+export interface ScoreBreakdown {
+  reward_potential: number
+  verification: number
+  reward_effort: number
+  platform_risk: number
+  accessibility: number
+  reward_stability: number
+  bobot_version: string // versi bobot agar skor historis dapat dijelaskan (PRD §32)
+}
+
+export interface ScoredResult {
+  score: number // 0–100
+  breakdown: ScoreBreakdown
+}
+
+// ——— Scan state machine (PRD §62, ARCHITECTURE §2) ———
+// Status scan melayani UI & polling; mengikuti enum scan_state di migration 0001_init.sql.
+export type ScanState =
+  | 'queued'
+  | 'checking_cache'
+  | 'discovering'
+  | 'filtering'
+  | 'extracting'
+  | 'verifying'
+  | 'calculating'
+  | 'ranking'
+  | 'completed'
+  | 'cache_completed'
+  | 'limited'
+  | 'failed'
+
+// Status yang dipakai UI untuk menampilkan langkah progres (subset state machine, berurutan).
+export type ScanStage = 'queued' | 'checking_cache' | 'discovering' | 'filtering' | 'extracting' | 'verifying' | 'calculating' | 'ranking'
+
+export interface ScanPollResult {
+  id: string
+  state: ScanState
+  source: 'database' | 'cache' | 'search'
+  results: Platform[] // hasil yang siap ditampilkan (database/cache) — kosong bila masih discover
+  candidates: number
+  error?: string
+}
+
+export interface ScanCreditsState {
+  plan: string
+  quickUsedToday: number
+  quickRemaining: number
+  deepUsedToday: number
+  deepRemaining: number
+  usageDate: string // ISO date
+  source: 'db' | 'config' // 'db' = scan_credits (Supabase); 'config' = fallback statis DEFAULT_PLAN
+}

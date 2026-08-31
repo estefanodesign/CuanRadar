@@ -2,7 +2,7 @@
 // Responsive penuh: desktop (md+) = sidebar kiri; mobile = top header + bottom nav.
 import { Suspense } from 'react'
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
-import { getPlan, DEFAULT_PLAN } from '../config/plans'
+import { useScanCredits } from '../lib/scanCredits'
 import { useAuth } from '../lib/auth'
 
 const NAV = [
@@ -39,7 +39,7 @@ function NavList({ pathname }: { pathname: string }) {
 export function AppLayout() {
   const { user, configured } = useAuth()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const plan = getPlan(DEFAULT_PLAN)
+  const { credits } = useScanCredits()
 
   return (
     <div className="min-h-dvh bg-slate-950 text-slate-100">
@@ -54,9 +54,9 @@ export function AppLayout() {
         </nav>
         <div className="space-y-2 border-t border-slate-800 pt-3">
           <div className="rounded-lg bg-slate-900 px-3 py-2 text-xs">
-            <p className="text-slate-400">Plan {plan.name}</p>
+            <p className="text-slate-400">Plan {credits.plan}</p>
             <p className="font-semibold text-slate-200">
-              ⚡ {plan.quickPerDay}/hari · 🔍 {plan.deepPerDay}/hari
+              ⚡ {credits.quickRemaining}/hari · 🔍 {credits.deepRemaining}/hari
             </p>
           </div>
           <Link to="/" className="block rounded-lg px-3 py-2 text-xs text-slate-500 transition hover:text-slate-300">
@@ -74,7 +74,7 @@ export function AppLayout() {
               <span className="text-sm font-bold tracking-tight">CuanRadar</span>
             </Link>
             <div className="flex items-center gap-2 text-xs">
-              <span className="rounded-full border border-slate-700 px-2 py-0.5 text-slate-300">{plan.name}</span>
+              <span className="rounded-full border border-slate-700 px-2 py-0.5 text-slate-300">{credits.plan}</span>
               {configured && user ? (
                 <span className="max-w-[8rem] truncate text-slate-400">{user.email}</span>
               ) : (
@@ -89,8 +89,8 @@ export function AppLayout() {
         {/* Top bar desktop */}
         <header className="hidden items-center justify-between border-b border-slate-800 px-8 py-3 md:flex">
           <p className="text-sm text-slate-400">
-            Plan <span className="font-semibold text-slate-200">{plan.name}</span> · ⚡ {plan.quickPerDay} quick/hari · 🔍{' '}
-            {plan.deepPerDay} deep/hari
+            Plan <span className="font-semibold text-slate-200">{credits.plan}</span> · ⚡ {credits.quickRemaining} quick/hari · 🔍{' '}
+            {credits.deepRemaining} deep/hari
           </p>
           <div className="flex items-center gap-3 text-xs">
             {configured && user ? (

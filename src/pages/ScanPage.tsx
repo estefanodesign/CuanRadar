@@ -1,90 +1,123 @@
-// CuanRadar — AI Scan (PRD §52–54, §63)
-// BUILD 2: Quick Scan memakai data dari database (Supabase) dengan cek kecukupan (PRD §14 v1.1).
-// Deep Scan (discovery/extraction AI) berjalan server-side via engine/ — integrasi edge function di BUILD 3.
+// CuanRadar — AI Scan (PRD §52–54, §63; Appendix A9)
+// BUILD 3: Quick Scan memakai state machine (PRD §62) + hasil DB-first nyata. Kuota dari scan_credits.
+// Deep Scan (discovery/extraction AI) berjalan server-side — di sini menampilkan state & pesan jujur.
+// Polling baca scan_history bila tersedia; fallback lokal bila server belum aktif (jujur, tidak mengarang).
 import { useState } from 'react'
-import { getPlan, DEFAULT_PLAN } from '../config/plans'
-import { usePlatforms } from '../lib/platforms'
+import { usePlatforms, useRefetchPlatforms } from '../lib/platforms'
+import { useScanPoll, runQuickScanLocal, minNeeded, countByCategory } from '../lib/scan'
 import { ScanControls, type ScanType } from '../components/ScanControls'
 import { RewardCard } from '../components/RewardCard'
 import { getSavedIds, toggleSaved } from '../lib/savedApps'
 import { EmptyState } from '../components/EmptyState'
+import { ScanProgress } from '../components/ScanProgress'
+import { GovernorBanner } from '../components/GovernorBanner'
+import { CacheStatus } from '../components/CacheStatus'
+import { useScanCredits, useGovernor } from '../lib/scanCredits'
+import { ProvenanceBadge } from '../components/ProvenanceBadge'
 import type { Category } from '../types'
 
 export function ScanPage() {
-  const plan = getPlan(DEFAULT_PLAN)
   const [scanType, setScanType] = useState<ScanType>('quick')
   const [category, setCategory] = useState<Category | 'all'>('all')
-  const [hasScanned, setHasScanned] = useState(false)
+  const [started, setStarted] = useState(false)
   const [, setSavedVersion] = useState(0)
   const saved = getSavedIds()
-  const { platforms, source } = usePlatforms()
+  const { platforms, source, dataUpdatedAt } = usePlatforms()
+  const refetch = useRefetchPlatforms()
+  const { credits } = useScanCredits()
+  const governor = useGovernor(credits)
 
-  const results = hasScanned
-    ? platforms.filter((p) => category === 'all' || p.category === category)
-    : []
+  // Polling abstraction: Quick Scan selesai sinkron; Deep Scan menunggu server (pollOnce → null sekarang).
+  const initialPoll = started
+    ? scanType === 'quick'
+      ? runQuickScanLocal(platforms, category)
+      : { id: `deep-${Date.now()}`, state: 'discovering' as const, source: 'database' as const, results: [], candidates: 0 }
+    : null
+  const { poll } = useScanPoll(initialPoll)
 
-  // Data sufficiency (PRD §14 v1.1): minimum per cakupan scan; "All" = 12 (4+4+2+2)
-  const MIN_PER_CATEGORY: Record<Category, number> = { entertainment: 4, shopping: 4, wallet: 2, lainnya: 2 }
-  const available = category === 'all' ? platforms.length : platforms.filter((p) => p.category === category).length
-  const minNeeded = category === 'all' ? 12 : MIN_PER_CATEGORY[category]
-  const sufficient = available >= minNeeded
+  const results = poll?.results ?? []
+  const scanned = Boolean(poll)
+  const done = poll ? poll.state === 'completed' || poll.state === 'cache_completed' || poll.state === 'failed' || poll.state === 'limited' : false
+  const isDeepRunning = scanType === 'deep' && scanned && !done
+
+  const available = countByCategory(platforms, category)
+  const minNeededN = minNeeded(category)
 
   return (
     <div className="space-y-5">
       <section>
         <h1 className="text-xl font-bold">AI Scan</h1>
         <p className="text-sm text-slate-400">
-          Sisa kuota hari ini: ⚡ {plan.quickPerDay} quick · 🔍 {plan.deepPerDay} deep
+          Sisa kuota hari ini: ⚡ {credits.quickRemaining} quick · 🔍 {credits.deepRemaining} deep
         </p>
       </section>
+
+      <GovernorBanner governor={governor} />
 
       <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
         <ScanControls scanType={scanType} onScanTypeChange={setScanType} category={category} onCategoryChange={setCategory} />
         <button
           type="button"
-          onClick={() => setHasScanned(true)}
-          className="mt-4 w-full rounded-xl bg-emerald-500 px-3 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+          onClick={() => setStarted(true)}
+          disabled={isDeepRunning}
+          className="mt-4 w-full rounded-xl bg-emerald-500 px-3 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:opacity-60"
         >
-          {scanType === 'quick' ? '⚡ SCAN' : '🔍 SCAN'}
+          {isDeepRunning ? 'Memindai…' : scanType === 'quick' ? '⚡ SCAN' : '🔍 SCAN'}
         </button>
         <p className="mt-2 text-[11px] text-slate-500">
-          Kecukupan data ({category === 'all' ? 'semua kategori' : category}): {available}/{minNeeded} platform ·{' '}
-          {sufficient ? 'cukup — hasil dari database' : 'kurang — discovery otomatis via engine (BUILD 3)'}
+          Kecukupan data ({category === 'all' ? 'semua kategori' : category}): {available}/{minNeededN} platform ·{' '}
+          {available >= minNeededN ? 'cukup — hasil dari database' : 'kurang — discovery otomatis via engine (BUILD 3)'}
         </p>
       </section>
 
-      {!hasScanned ? (
+      <CacheStatus dataUpdatedAt={dataUpdatedAt} source={source} onRefresh={refetch} />
+
+      {!scanned ? (
         <EmptyState
           title="Mulai scan pertama Anda"
           description="Kami memeriksa peluang reward terkini. Scan pertama mungkin sedikit lebih lama."
         />
-      ) : scanType === 'deep' ? (
-        <EmptyState
-          title="Deep Scan berjalan server-side"
-          description="Engine discovery & ekstraksi siap di engine/ (jalankan npm run scan:deep dengan kunci AI). Integrasi edge function penuh hadir di BUILD 3."
-        />
-      ) : results.length === 0 ? (
-        <EmptyState title="Belum ada peluang reward pada kategori ini" description="Coba kategori lain atau jalankan scan lagi nanti." />
+      ) : isDeepRunning ? (
+        <>
+          <ScanProgress state={poll?.state ?? 'discovering'} candidates={0} />
+          <EmptyState
+            title="Deep Scan berjalan server-side"
+            description="Engine discovery & ekstraksi siap di engine/ (jalankan npm run scan:deep dengan kunci AI). Integrasi edge function penuh hadir di BUILD 3 — polling otomatis saat API aktif."
+          />
+        </>
+      ) : done ? (
+        results.length === 0 ? (
+          <>
+            {poll?.state === 'limited' ? <ScanProgress state="limited" candidates={0} /> : null}
+            <EmptyState title="Belum ada peluang reward pada kategori ini" description="Coba kategori lain atau jalankan scan lagi nanti." />
+          </>
+        ) : (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold">
+                {poll?.state === 'cache_completed' ? `${results.length} peluang ditemukan` : `${results.length} peluang (hasil tersedia)`}
+              </h2>
+              <ProvenanceBadge provenance={poll?.source === 'search' ? 'search_new' : 'database'} />
+            </div>
+            {results.map((p) => (
+              <RewardCard
+                key={p.id}
+                platform={p}
+                saved={saved.includes(p.id)}
+                onToggleSave={() => {
+                  toggleSaved(p.id)
+                  setSavedVersion((v) => v + 1)
+                }}
+                provenance={poll?.source === 'search' ? 'search_new' : 'database'}
+              />
+            ))}
+            {poll?.source === 'search' ? (
+              <p className="text-[11px] text-slate-500">Hasil dari pencarian baru — menunggu review sebelum dipublikasikan (PRD Appendix A6).</p>
+            ) : null}
+          </section>
+        )
       ) : (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">{results.length} peluang ditemukan</h2>
-            <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[11px] text-slate-400">
-              sumber: {source === 'supabase' ? 'database (Supabase)' : 'katalog kurasi F0'}
-            </span>
-          </div>
-          {results.map((p) => (
-            <RewardCard
-              key={p.id}
-              platform={p}
-              saved={saved.includes(p.id)}
-              onToggleSave={() => {
-                toggleSaved(p.id)
-                setSavedVersion((v) => v + 1)
-              }}
-            />
-          ))}
-        </section>
+        <ScanProgress state={poll?.state ?? 'queued'} candidates={poll?.candidates ?? 0} />
       )}
 
       <p className="text-[11px] text-slate-600">
