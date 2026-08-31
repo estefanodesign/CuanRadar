@@ -27,7 +27,7 @@ export function ScanControls({ scanType, onScanTypeChange, category, onCategoryC
             key={t}
             type="button"
             onClick={() => onScanTypeChange(t)}
-            className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition ${
+            className={`flex min-h-11 items-center justify-center rounded-xl border px-3 text-sm font-medium transition ${
               scanType === t
                 ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
                 : 'border-slate-700 bg-slate-900 text-slate-300'

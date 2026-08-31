@@ -77,14 +77,14 @@ export function RewardCard({ platform, saved, onToggleSave, provenance = 'databa
           <button
             type="button"
             onClick={() => onToggleSave(platform.id)}
-            className="rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-200 transition hover:border-slate-500"
+            className="flex min-h-11 items-center rounded-lg border border-slate-700 px-3 text-xs text-slate-200 transition hover:border-slate-500"
             aria-pressed={saved}
           >
             {saved ? '✓ Tersimpan' : 'Simpan'}
           </button>
           <Link
             to={detailPath}
-            className="rounded-lg border border-emerald-500/40 px-2.5 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/15"
+            className="flex min-h-11 items-center rounded-lg border border-emerald-500/40 px-3 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/15"
           >
             Detail
           </Link>
@@ -92,7 +92,7 @@ export function RewardCard({ platform, saved, onToggleSave, provenance = 'databa
             href={platform.website ?? undefined}
             target="_blank"
             rel="noreferrer"
-            className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition ${
+            className={`flex min-h-11 items-center rounded-lg px-3 text-xs font-medium transition ${
               platform.website
                 ? 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'
                 : 'pointer-events-none bg-slate-800 text-slate-500'
