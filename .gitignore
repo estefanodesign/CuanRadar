@@ -1,0 +1,31 @@
+# dependencies
+node_modules/
+.npm-cache/
+
+# build output
+dist/
+dist-ssr/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# logs
+*.log
+npm-debug.log*
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# vercel / cloudflare
+.vercel
+.wrangler
