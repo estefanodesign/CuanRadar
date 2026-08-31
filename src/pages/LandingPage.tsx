@@ -251,11 +251,11 @@ export function LandingPage() {
           {STATS.map((s) => (
             <div key={s.label}>
               <CountUp target={s.value} suffix={s.suffix} />
-              <p className="mt-1 text-xs uppercase tracking-wider text-cream/60">{s.label}</p>
+              <p className="mt-1 text-xs uppercase tracking-wider text-cream/75">{s.label}</p>
             </div>
           ))}
         </div>
-        <p className="mx-auto mt-6 max-w-md px-4 text-center text-[11px] text-cream/40">
+        <p className="mx-auto mt-6 max-w-md px-4 text-center text-[11px] text-cream/50">
           Angka berdasarkan data nyata katalog & review queue kami — bukan klaim marketing (PRD §3.5).
         </p>
       </section>
@@ -281,12 +281,12 @@ export function LandingPage() {
       </section>
 
       {/* Harga (pola: toggle Bulanan/Tahunan + 3 kartu, tengah highlight — warna CuanRadar jade/gold) */}
-      <section id="harga" className="border-b border-gold/20 bg-jade-dark py-20 text-cream">
+      <section id="harga" className="border-b border-gold/20 bg-jade py-20 text-cream">
         <div className="mx-auto max-w-5xl px-4">
           <h2 className="text-center font-display text-2xl font-bold tracking-wide md:text-3xl">
             HARGA <span className="text-gold">SEDERHANA</span>
           </h2>
-          <p className="mx-auto mt-2 max-w-md text-center text-cream/60">
+          <p className="mx-auto mt-2 max-w-md text-center text-cream/75">
             Mulai gratis. Upgrade hanya bila butuh kapasitas lebih — posisi ranking tidak pernah bisa dibeli.
           </p>
 
@@ -317,7 +317,7 @@ export function LandingPage() {
                 <div
                   key={plan.id}
                   className={`relative flex flex-col rounded-2xl border p-6 ${
-                    highlight ? 'border-gold bg-jade-soft' : 'border-gold/25 bg-jade'
+                    highlight ? 'border-gold bg-jade-soft' : 'border-gold/25 bg-jade-soft'
                   }`}
                 >
                   {highlight ? (
@@ -326,12 +326,12 @@ export function LandingPage() {
                     </p>
                   ) : null}
                   <h3 className="font-display text-sm font-bold tracking-wide">{plan.name.toUpperCase()}</h3>
-                  <p className="mt-1 text-xs text-cream/60">
+                  <p className="mt-1 text-xs text-cream/75">
                     {plan.id === 'free' ? 'Untuk mulai mencoba' : plan.id === 'pro' ? 'Untuk pengejar cuan serius' : 'Untuk power user'}
                   </p>
                   <p className={`mt-3 text-3xl font-bold ${highlight ? 'text-gold' : 'text-cream'}`}>
                     {price ? `Rp${price.toLocaleString('id-ID')}` : 'Gratis'}
-                    {price ? <span className="text-sm font-normal text-cream/60">{period}</span> : null}
+                    {price ? <span className="text-sm font-normal text-cream/75">{period}</span> : null}
                   </p>
                   <ul className={`mt-4 flex-1 space-y-2 text-sm ${highlight ? 'text-cream/85' : 'text-cream/70'}`}>
                     <li className="flex items-center gap-2"><span className="text-gold">✓</span> ⚡ {plan.quickPerDay}× Quick Scan/hari</li>
@@ -358,14 +358,14 @@ export function LandingPage() {
       </section>
 
       {/* FAQ (pola: heading + accordion bertumpuk, panah) */}
-      <section id="faq" className="border-b border-gold/20 bg-jade-dark py-20 text-cream">
+      <section id="faq" className="border-b border-gold/20 bg-jade py-20 text-cream">
         <div className="mx-auto max-w-2xl px-4">
           <h2 className="text-center font-display text-2xl font-bold tracking-wide md:text-3xl">
             PERTANYAAN <span className="text-gold">UMUM</span>
           </h2>
           <div className="mt-8 space-y-3">
             {FAQS.map((f) => (
-              <details key={f.q} className="group rounded-2xl border border-gold/25 bg-jade px-5 py-4">
+              <details key={f.q} className="group rounded-2xl border border-gold/25 bg-jade-soft px-5 py-4">
                 <summary className="flex cursor-pointer items-center justify-between gap-3 text-sm font-semibold text-cream">
                   {f.q}
                   <span className="text-gold transition-transform duration-200 ease-out group-open:rotate-180">▾</span>
@@ -378,7 +378,7 @@ export function LandingPage() {
       </section>
 
       {/* 6. CTA (pola: split — kiri teks+tombol, kanan grid 2×2 kartu benefit) */}
-      <section className="bg-jade-dark py-20 text-cream">
+      <section className="bg-jade py-20 text-cream">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 md:grid-cols-2 md:items-center">
           <div>
             <h2 className="font-display text-2xl font-bold leading-tight md:text-3xl">
@@ -399,12 +399,12 @@ export function LandingPage() {
               { icon: '🔔', title: 'Alert Real-time', desc: 'Peluang baru terpantau' },
               { icon: '🧭', title: '4 Kategori', desc: 'Entertainment · Shopping · Wallet · Lainnya' },
             ].map((b) => (
-              <div key={b.title} className="rounded-2xl border border-gold/25 bg-jade p-5">
+              <div key={b.title} className="rounded-2xl border border-gold/25 bg-jade-soft p-5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full border border-gold/40 bg-gold/10 text-lg">
                   {b.icon}
                 </div>
                 <p className="mt-3 text-sm font-semibold text-gold">{b.title}</p>
-                <p className="mt-0.5 text-xs text-cream/60">{b.desc}</p>
+                <p className="mt-0.5 text-xs text-cream/75">{b.desc}</p>
               </div>
             ))}
           </div>
@@ -427,7 +427,7 @@ export function LandingPage() {
               <a href="#faq" className="transition hover:text-gold">FAQ</a>
             </nav>
           </div>
-          <p className="mt-6 text-[11px] leading-relaxed text-cream/40">
+          <p className="mt-6 text-[11px] leading-relaxed text-cream/50">
             Disclaimer: CuanRadar bukan nasihat keuangan atau investasi. Semua angka reward adalah estimasi berlabel
             dengan tanggal verifikasi dan dapat berubah. Peringkat ditentukan rubrik publik yang deterministik — mitra
             tidak dapat membeli posisi.
