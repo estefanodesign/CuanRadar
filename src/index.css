@@ -1,9 +1,86 @@
 @import "tailwindcss";
 
+/* ——— CuanRadar theme (Prompt_UI: Deep Sea Jade / Champagne Gold / Off-White) ——— */
+@theme {
+  --color-jade: #0b3b36;
+  --color-jade-dark: #062a26;
+  --color-jade-soft: #0e4a43;
+  --color-gold: #d4af37;
+  --color-gold-soft: #e6c85c;
+  --color-cream: #f5f0e1;
+  --color-paper: #faf7f0;
+
+  --font-display: "Orbitron", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Exo 2", ui-sans-serif, system-ui, sans-serif;
+}
+
 html {
   scroll-behavior: smooth;
 }
 
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-cream);
+  color: var(--color-jade-dark);
+}
+
 ::selection {
-  background-color: rgb(16 185 129 / 0.3);
+  background-color: rgb(212 175 55 / 0.3);
+}
+
+/* ——— Radar visual (hanya transform & opacity — GPU-friendly, AI_RULES §11) ——— */
+.radar-ring {
+  position: absolute;
+  border-radius: 9999px;
+  border: 1px solid rgb(212 175 55 / 0.3);
+}
+
+.radar-sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: conic-gradient(from 0deg, rgb(212 175 55 / 0.35), transparent 70deg);
+  animation: radar-rotate 6s linear infinite;
+}
+
+@keyframes radar-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.radar-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--color-gold);
+  box-shadow: 0 0 8px rgb(212 175 55 / 0.8);
+  animation: particle-ping 4s ease-out infinite;
+}
+
+@keyframes particle-ping {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+.radar-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 9999px;
+  background: var(--color-gold);
+  box-shadow: 0 0 12px rgb(212 175 55 / 0.9);
 }

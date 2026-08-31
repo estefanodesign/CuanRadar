@@ -1,25 +1,31 @@
-// CuanRadar — Landing page (tampilan awal untuk pengunjung)
-// Responsive penuh: desktop multi-kolom, mobile stacked.
+// CuanRadar — Landing page art-futuristik (Prompt_UI: Deep Sea Jade + Champagne Gold)
+// Mobile-first penuh (375px → 768px → 1024px+); animasi hanya transform/opacity.
+// Angka statistik JUJUR (bukan klaim palsu — PRD §3.5, AI_RULES §11): 30+ platform · 4 kategori ·
+// 13+ kandidat menunggu kurasi · 30 hari siklus verifikasi.
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { Link } from '@tanstack/react-router'
 import { getSeedPlatforms } from '../lib/seed'
-import { Badge } from '../components/Badge'
-import { CATEGORY_LABELS, formatDate, getRiskLabel, getRewardTypeLabel, getVerificationLabel } from '../lib/format'
+import { CATEGORY_LABELS, getRewardTypeLabel } from '../lib/format'
 import { PLANS } from '../config/plans'
 import type { Platform } from '../types'
 
 const FEATURES = [
-  { icon: '📡', title: 'Discover', desc: 'Pantau puluhan platform reward Indonesia — entertainment, shopping, wallet, dan lainnya dalam satu tempat.' },
-  { icon: '⚖️', title: 'Compare', desc: 'Bandingkan cashback, poin, dan task secara berdampingan — hingga 16 aplikasi sekaligus.' },
-  { icon: '🧮', title: 'Estimate', desc: 'Kalkulasi cuan per jam/menit dengan asumsi transparan. Bukan klaim "pasti dapat jutaan".' },
-  { icon: '🛡️', title: 'Verify', desc: 'Dua sumbu penilaian: verifikasi informasi & penilaian risiko anti-scam per platform.' },
-  { icon: '✅', title: 'Choose', desc: 'Rekomendasi jujur dari skor deterministik 6 faktor. Peringkat tidak bisa dibeli.' },
+  { icon: '📡', title: 'Deteksi Otomatis', desc: 'Radar memantau platform reward Indonesia — entertainment, shopping, wallet, dan lainnya — dalam satu layar.' },
+  { icon: '⭕', title: 'Kurasi Cerdas', desc: 'Setiap peluang diverifikasi dua sumbu: kebenaran informasi & risiko anti-scam. Kandidat AI tak pernah langsung publish.' },
+  { icon: '✓', title: 'Pilihan Tepat', desc: 'CuanScore 6 faktor yang deterministik — peringkat tidak bisa dibeli, keputusan jadi lebih mudah.' },
 ]
 
 const STEPS = [
-  { n: '1', title: 'Scan', desc: 'Jalankan Quick Scan harian gratis — langsung dapat peluang terbaik.' },
-  { n: '2', title: 'Bandingkan', desc: 'Pilih aplikasi favorit dan lihat perbandingan reward, effort, dan risiko.' },
-  { n: '3', title: 'Verifikasi', desc: 'Pastikan platform aman: cek status verifikasi & riwayat payout.' },
-  { n: '4', title: 'Klaim', desc: 'Buka aplikasi resmi via tautan terverifikasi dan mulai kumpulkan cuan.' },
+  { n: '01', title: 'Aktifkan Radar', desc: 'Jalankan Quick Scan gratis — otomatis, dari database terverifikasi.' },
+  { n: '02', title: 'Terima Sinyal', desc: 'Dapatkan kandidat peluang terbaik dengan skor, verifikasi, dan risiko yang jelas.' },
+  { n: '03', title: 'Kumpulkan Cuan', desc: 'Buka aplikasi resmi via tautan terverifikasi dan kumpulkan reward Anda.' },
+]
+
+const STATS = [
+  { value: 30, suffix: '+', label: 'Platform Reward Dipantau' },
+  { value: 4, suffix: '', label: 'Kategori Peluang' },
+  { value: 13, suffix: '+', label: 'Kandidat Menunggu Kurasi' },
+  { value: 30, suffix: ' hari', label: 'Siklus Verifikasi' },
 ]
 
 const FAQS = [
@@ -29,179 +35,255 @@ const FAQS = [
   { q: 'Apa bedanya verifikasi dan risiko?', a: 'Verifikasi = apakah informasinya benar. Risiko = apakah platformnya aman (anti-scam). Keduanya ditampilkan terpisah.' },
 ]
 
-function ScanResultCard({ p }: { p: Platform }) {
-  const verTone = p.verification_status === 'verified' ? 'green' : p.verification_status === 'partially_verified' ? 'amber' : 'slate'
-  const riskTone = p.risk_level === 'rendah' ? 'green' : p.risk_level === 'sedang' ? 'amber' : 'red'
+// ——— Count-up saat scroll (angka nyata; durasi 1 detik, easing cubic-out) ———
+function useInView<T extends HTMLElement>(): [RefObject<T | null>, boolean] {
+  const ref = useRef<T | null>(null)
+  const [inView, setInView] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true)
+          obs.disconnect()
+        }
+      },
+      { threshold: 0.3 },
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+  return [ref, inView]
+}
+
+function CountUp({ target, suffix }: { target: number; suffix: string }) {
+  const [ref, inView] = useInView<HTMLSpanElement>()
+  const [value, setValue] = useState(0)
+  useEffect(() => {
+    if (!inView) return
+    let raf = 0
+    const start = performance.now()
+    const duration = 1000
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / duration)
+      setValue(Math.round(target * (1 - Math.pow(1 - p, 3))))
+      if (p < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [inView, target])
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 transition hover:border-slate-600">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-slate-100">{p.name}</p>
-          <p className="text-[11px] text-slate-500">{CATEGORY_LABELS[p.category]}</p>
-        </div>
-        <span className="text-slate-600">→</span>
+    <span ref={ref} className="font-display text-3xl font-bold text-jade md:text-4xl">
+      {value.toLocaleString('id-ID')}
+      {suffix}
+    </span>
+  )
+}
+
+// ——— Visual Radar (lingkaran + grid tipis + partikel sonar; GPU-friendly) ———
+const PARTICLES = [
+  { left: '28%', top: '36%', delay: '0s' },
+  { left: '62%', top: '30%', delay: '1.2s' },
+  { left: '70%', top: '62%', delay: '2.4s' },
+  { left: '38%', top: '70%', delay: '0.8s' },
+  { left: '52%', top: '48%', delay: '3s' },
+]
+
+function RadarVisual() {
+  return (
+    <div className="relative mx-auto aspect-square w-[70vw] max-w-[420px]" aria-hidden>
+      <div className="radar-ring inset-0" />
+      <div className="radar-ring inset-[14%]" />
+      <div className="radar-ring inset-[28%]" />
+      <div className="radar-sweep" />
+      {PARTICLES.map((p, i) => (
+        <span key={i} className="radar-particle" style={{ left: p.left, top: p.top, animationDelay: p.delay }} />
+      ))}
+      <div className="radar-center" />
+    </div>
+  )
+}
+
+function PlatformChip({ p }: { p: Platform }) {
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-xl border border-gold/25 bg-paper px-3 py-2.5 opacity-70 saturate-0 transition duration-200 ease-out hover:opacity-100 hover:saturate-100">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold text-jade-dark">{p.name}</p>
+        <p className="text-[11px] text-jade/60">{CATEGORY_LABELS[p.category]}</p>
       </div>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {p.reward_types.slice(0, 3).map((t) => (
-          <span key={t} className="rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[11px] text-emerald-300">
+      <div className="flex shrink-0 flex-wrap justify-end gap-1">
+        {p.reward_types.slice(0, 2).map((t) => (
+          <span key={t} className="rounded-md bg-gold/15 px-1.5 py-0.5 text-[10px] font-medium text-gold">
             {getRewardTypeLabel(t)}
           </span>
         ))}
       </div>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        <Badge tone={verTone}>{getVerificationLabel(p.verification_status)}</Badge>
-        <Badge tone={riskTone}>{getRiskLabel(p.risk_level)}</Badge>
-      </div>
-      <p className="mt-2 text-[10px] text-slate-600">verif {formatDate(p.last_verified_at)}</p>
     </div>
   )
 }
 
 export function LandingPage() {
-  const scanExample = getSeedPlatforms().filter((p) => p.status === 'mvp' || p.status === 'fase2').slice(0, 6)
+  const platforms = getSeedPlatforms().slice(0, 12)
 
   return (
-    <div className="min-h-dvh bg-slate-950 text-slate-100">
+    <div className="min-h-dvh bg-cream text-jade-dark">
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+      <header className="sticky top-0 z-30 border-b border-gold/20 bg-jade text-cream">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link to="/" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-base">📡</span>
-            <span className="text-sm font-bold tracking-tight">CuanRadar</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/20 text-base">📡</span>
+            <span className="font-display text-sm font-bold tracking-widest text-gold">CUANRADAR</span>
           </Link>
-          <nav className="hidden items-center gap-6 text-sm text-slate-400 md:flex">
-            <a href="#fitur" className="transition hover:text-slate-200">Fitur</a>
-            <a href="#platform" className="transition hover:text-slate-200">Platform</a>
-            <a href="#cara-kerja" className="transition hover:text-slate-200">Cara Kerja</a>
-            <a href="#harga" className="transition hover:text-slate-200">Harga</a>
+          <nav className="hidden items-center gap-6 text-sm text-cream/80 md:flex">
+            <a href="#fitur" className="transition hover:text-gold">Fitur</a>
+            <a href="#cara-kerja" className="transition hover:text-gold">Cara Kerja</a>
+            <a href="#platform" className="transition hover:text-gold">Platform</a>
+            <a href="#harga" className="transition hover:text-gold">Harga</a>
           </nav>
           <div className="flex items-center gap-2">
-            <Link to="/app/login" className="rounded-lg px-3 py-1.5 text-sm text-slate-300 transition hover:text-slate-100">
+            <Link to="/app/login" className="rounded-full px-3 py-1.5 text-sm text-cream/80 transition hover:text-gold">
               Masuk
             </Link>
-            <Link to="/app" className="rounded-lg bg-emerald-500 px-3 py-1.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400">
+            <Link
+              to="/app"
+              className="rounded-full bg-gold px-4 py-1.5 text-sm font-semibold text-jade transition hover:bg-gold-soft"
+            >
               Coba Gratis
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="border-b border-slate-800">
-        <div className="mx-auto grid max-w-5xl gap-10 px-4 py-14 md:grid-cols-2 md:items-center md:py-20">
+      {/* 1. Hero */}
+      <section className="border-b border-gold/20 bg-gradient-to-b from-jade via-jade to-cream text-cream">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 pb-16 pt-10 md:grid-cols-2 md:items-center md:pb-24 md:pt-16">
           <div>
-            <p className="inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
-              30+ platform reward Indonesia terpantau
+            <p className="inline-flex rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-xs font-medium text-gold">
+              📡 Radar reward Indonesia · kurasi anti-scam
             </p>
-            <h1 className="mt-4 text-3xl font-bold leading-tight md:text-4xl">
-              Setiap menit waktu Anda <span className="text-emerald-400">berharga</span>.
+            <h1 className="mt-5 font-display text-[42px] font-bold leading-tight tracking-wide text-cream md:text-[72px]">
+              CUAN<span className="text-gold">RADAR</span>
             </h1>
-            <p className="mt-3 text-slate-400">
-              CuanRadar melacak, membandingkan, dan memverifikasi peluang reward terbaik dari entertainment, shopping,
-              dan e-wallet — dengan kalkulasi cuan yang jujur dan perlindungan anti-scam.
+            <p className="mt-2 font-display text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+              Setiap menit waktu Anda berharga
+            </p>
+            <p className="mt-4 max-w-md text-cream/80">
+              Radar pintar yang menangkap peluang reward dari berbagai platform di Indonesia — otomatis,
+              terkurasi, dan siap Anda pilih.
             </p>
             <div className="mt-6 flex flex-col gap-2 sm:flex-row">
               <Link
-                to="/app"
-                className="rounded-xl bg-emerald-500 px-5 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+                to="/app/scan"
+                className="rounded-full bg-gold px-6 py-3 text-center text-sm font-semibold text-jade transition hover:bg-gold-soft"
               >
-                ⚡ Coba Scan Gratis
+                Mulai Scan Peluang
               </Link>
               <a
                 href="#platform"
-                className="rounded-xl border border-slate-700 px-5 py-3 text-center text-sm font-medium text-slate-200 transition hover:border-slate-500"
+                className="rounded-full border border-gold/50 px-6 py-3 text-center text-sm font-medium text-cream transition hover:border-gold hover:text-gold"
               >
-                Lihat contoh hasil
+                Lihat Sinyal
               </a>
             </div>
-            <p className="mt-3 text-[11px] text-slate-600">
-              Gratis selamanya untuk pemakaian dasar · tanpa kartu kredit · pembayaran QRIS/e-wallet bila upgrade
-            </p>
+            <p className="mt-3 text-xs text-cream/50">Gratis selamanya untuk pemakaian dasar · tanpa kartu kredit</p>
           </div>
-          {/* Mock scan preview */}
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-slate-300">Hasil Quick Scan</p>
-              <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-400">contoh</span>
-            </div>
-            <div className="mt-3 space-y-3">
-              {scanExample.slice(0, 3).map((p) => (
-                <ScanResultCard key={p.id} p={p} />
-              ))}
-            </div>
-          </div>
+          <RadarVisual />
         </div>
       </section>
 
-      {/* Features */}
-      <section id="fitur" className="border-b border-slate-800">
-        <div className="mx-auto max-w-5xl px-4 py-14">
-          <h2 className="text-center text-2xl font-bold">Discover → Compare → Estimate → Verify → Choose</h2>
-          <p className="mx-auto mt-2 max-w-xl text-center text-sm text-slate-400">
-            Satu alur untuk mengubah informasi reward yang tersebar menjadi keputusan terbaik Anda.
+      {/* 2. Features */}
+      <section id="fitur" className="border-b border-gold/20 bg-cream py-14">
+        <div className="mx-auto max-w-6xl px-4">
+          <h2 className="text-center font-display text-2xl font-bold tracking-wide text-jade md:text-3xl">
+            RADAR YANG <span className="text-gold">BEKERJA</span>
+          </h2>
+          <p className="mx-auto mt-2 max-w-xl text-center text-jade/70">
+            Discover → Compare → Estimate → Verify → Choose — satu alur untuk keputusan terbaik.
           </p>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
             {FEATURES.map((f) => (
-              <div key={f.title} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-lg">{f.icon}</div>
-                <h3 className="mt-3 text-sm font-semibold">{f.title}</h3>
-                <p className="mt-1 text-xs leading-relaxed text-slate-400">{f.desc}</p>
+              <div
+                key={f.title}
+                className="rounded-2xl border border-gold/30 bg-paper p-6 transition duration-200 ease-out hover:border-gold"
+              >
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-gold/40 bg-gold/10 text-lg text-gold">
+                  {f.icon}
+                </div>
+                <h3 className="mt-3 text-lg font-semibold text-jade">{f.title}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-jade/70">{f.desc}</p>
               </div>
             ))}
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 text-lg">📊</div>
-              <h3 className="mt-3 text-sm font-semibold text-emerald-300">CuanScore</h3>
-              <p className="mt-1 text-xs leading-relaxed text-emerald-200/70">
-                Skor deterministik 6 faktor: potensi reward, verifikasi, effort, risiko, aksesibilitas, stabilitas.
-              </p>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* Platform — contoh hasil scan */}
-      <section id="platform" className="border-b border-slate-800">
-        <div className="mx-auto max-w-5xl px-4 py-14">
+      {/* 3. How It Works */}
+      <section id="cara-kerja" className="border-b border-gold/20 bg-paper py-14">
+        <div className="mx-auto max-w-5xl px-4">
+          <h2 className="text-center font-display text-2xl font-bold tracking-wide text-jade md:text-3xl">
+            CARA KERJA
+          </h2>
+          <div className="mt-10 grid gap-8 md:grid-cols-3">
+            {STEPS.map((s, i) => (
+              <div key={s.n} className="relative">
+                {i < STEPS.length - 1 ? (
+                  <div className="absolute right-[-16px] top-6 hidden h-px w-8 bg-gold/50 md:block" />
+                ) : null}
+                <div className="flex flex-col items-center text-center">
+                  <span className="font-display text-sm font-semibold tracking-widest text-gold">{s.n}</span>
+                  <div className="mt-3 flex h-12 w-12 items-center justify-center rounded-full border border-gold/40 bg-jade text-gold">
+                    {i === 0 ? '📡' : i === 1 ? '📶' : '💰'}
+                  </div>
+                  <h3 className="mt-3 text-lg font-semibold text-jade">{s.title}</h3>
+                  <p className="mt-1 max-w-xs text-sm text-jade/70">{s.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Statistics (angka JUJUR) */}
+      <section className="border-b border-gold/20 bg-jade py-14 text-cream">
+        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-8 px-4 text-center md:grid-cols-4">
+          {STATS.map((s) => (
+            <div key={s.label}>
+              <CountUp target={s.value} suffix={s.suffix} />
+              <p className="mt-1 text-xs uppercase tracking-wider text-cream/60">{s.label}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mx-auto mt-6 max-w-md px-4 text-center text-[11px] text-cream/40">
+          Angka berdasarkan data nyata katalog & review queue kami — bukan klaim marketing (PRD §3.5).
+        </p>
+      </section>
+
+      {/* 5. Platform — contoh hasil scan */}
+      <section id="platform" className="border-b border-gold/20 bg-cream py-14">
+        <div className="mx-auto max-w-6xl px-4">
           <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end">
             <div>
-              <h2 className="text-2xl font-bold">Contoh hasil scan</h2>
-              <p className="mt-1 text-sm text-slate-400">
-                Sebagian katalog kurasi kami. Jalankan Scan di aplikasi untuk hasil lengkap & terbaru.
-              </p>
+              <h2 className="font-display text-2xl font-bold tracking-wide text-jade">SINYAL DARI PLATFORM</h2>
+              <p className="mt-1 text-jade/70">Contoh hasil scan katalog kurasi kami — jalankan Scan untuk hasil lengkap.</p>
             </div>
-            <Link to="/app/scan" className="text-sm font-medium text-emerald-300 transition hover:text-emerald-200">
+            <Link to="/app/scan" className="text-sm font-semibold text-gold transition hover:text-jade">
               Coba Scan gratis →
             </Link>
           </div>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {scanExample.map((p) => (
-              <ScanResultCard key={p.id} p={p} />
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {platforms.map((p) => (
+              <PlatformChip key={p.id} p={p} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* How it works */}
-      <section id="cara-kerja" className="border-b border-slate-800">
-        <div className="mx-auto max-w-5xl px-4 py-14">
-          <h2 className="text-center text-2xl font-bold">Cara kerja</h2>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map((s) => (
-              <div key={s.n} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-                <p className="text-2xl font-bold text-emerald-400">{s.n}</p>
-                <h3 className="mt-2 text-sm font-semibold">{s.title}</h3>
-                <p className="mt-1 text-xs leading-relaxed text-slate-400">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="harga" className="border-b border-slate-800">
-        <div className="mx-auto max-w-5xl px-4 py-14">
-          <h2 className="text-center text-2xl font-bold">Harga sederhana</h2>
-          <p className="mx-auto mt-2 max-w-md text-center text-sm text-slate-400">
+      {/* Harga (tetap, selaras tema) */}
+      <section id="harga" className="border-b border-gold/20 bg-paper py-14">
+        <div className="mx-auto max-w-5xl px-4">
+          <h2 className="text-center font-display text-2xl font-bold tracking-wide text-jade md:text-3xl">HARGA</h2>
+          <p className="mx-auto mt-2 max-w-md text-center text-jade/70">
             Mulai gratis. Upgrade hanya bila butuh kapasitas lebih — posisi ranking tidak pernah bisa dibeli.
           </p>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -210,33 +292,30 @@ export function LandingPage() {
               return (
                 <div
                   key={plan.id}
-                  className={`rounded-2xl border p-6 ${
-                    highlight ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-900/60'
+                  className={`relative rounded-2xl border p-6 ${
+                    highlight ? 'border-gold bg-jade text-cream' : 'border-gold/30 bg-paper text-jade-dark'
                   }`}
                 >
                   {highlight ? (
-                    <p className="mb-2 inline-flex rounded-full bg-emerald-500 px-2 py-0.5 text-[11px] font-semibold text-slate-950">
+                    <p className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gold px-3 py-0.5 text-[11px] font-bold text-jade">
                       PALING POPULER
                     </p>
                   ) : null}
-                  <h3 className="text-sm font-semibold">{plan.name}</h3>
-                  <p className="mt-2 text-2xl font-bold">
+                  <h3 className="font-display text-sm font-bold tracking-wide">{plan.name.toUpperCase()}</h3>
+                  <p className={`mt-2 text-3xl font-bold ${highlight ? 'text-gold' : 'text-jade'}`}>
                     {plan.priceMonthly ? `Rp${plan.priceMonthly.toLocaleString('id-ID')}` : 'Gratis'}
-                    {plan.priceMonthly ? <span className="text-sm font-normal text-slate-400">/bln</span> : null}
+                    {plan.priceMonthly ? <span className="text-sm font-normal opacity-70">/bln</span> : null}
                   </p>
-                  <ul className="mt-4 space-y-2 text-xs text-slate-300">
+                  <ul className={`mt-4 space-y-2 text-sm ${highlight ? 'text-cream/80' : 'text-jade/70'}`}>
                     <li>⚡ {plan.quickPerDay}× Quick Scan/hari</li>
                     <li>🔍 {plan.deepPerDay}× Deep Scan/hari</li>
                     <li>⚖️ Compare hingga {plan.compareOffers} aplikasi</li>
                     <li>🔖 Tracker {plan.trackerLimit === null ? 'tanpa batas' : `${plan.trackerLimit} entri`}</li>
-                    <li>🔔 Alert {plan.alertLevel === 'mingguan' ? 'mingguan' : plan.alertLevel === 'real_time' ? 'real-time (email)' : 'real-time (email + push)'}</li>
                   </ul>
                   <Link
                     to="/app"
-                    className={`mt-5 block rounded-xl px-4 py-2.5 text-center text-sm font-semibold transition ${
-                      highlight
-                        ? 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'
-                        : 'border border-slate-700 text-slate-200 hover:border-slate-500'
+                    className={`mt-5 block rounded-full px-4 py-2.5 text-center text-sm font-semibold transition ${
+                      highlight ? 'bg-gold text-jade hover:bg-gold-soft' : 'border border-gold/50 text-jade hover:bg-gold hover:text-jade'
                     }`}
                   >
                     {plan.id === 'free' ? 'Mulai gratis' : 'Upgrade (Fase 2)'}
@@ -249,56 +328,58 @@ export function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section className="border-b border-slate-800">
-        <div className="mx-auto max-w-2xl px-4 py-14">
-          <h2 className="text-center text-2xl font-bold">Pertanyaan umum</h2>
+      <section id="faq" className="border-b border-gold/20 bg-cream py-14">
+        <div className="mx-auto max-w-2xl px-4">
+          <h2 className="text-center font-display text-2xl font-bold tracking-wide text-jade">FAQ</h2>
           <div className="mt-6 space-y-3">
             {FAQS.map((f) => (
-              <details key={f.q} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-                <summary className="cursor-pointer text-sm font-medium text-slate-200">{f.q}</summary>
-                <p className="mt-2 text-xs leading-relaxed text-slate-400">{f.a}</p>
+              <details key={f.q} className="rounded-xl border border-gold/30 bg-paper p-4">
+                <summary className="cursor-pointer text-sm font-semibold text-jade">{f.q}</summary>
+                <p className="mt-2 text-sm leading-relaxed text-jade/70">{f.a}</p>
               </details>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA band */}
-      <section>
-        <div className="mx-auto max-w-5xl px-4 py-14 text-center">
-          <h2 className="text-2xl font-bold">Mulai sekarang — gratis</h2>
-          <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">
-            Setiap menit yang Anda habiskan untuk mencari reward adalah menit yang tidak menghasilkan. Biarkan CuanRadar yang mencarinya.
-          </p>
+      {/* 6. CTA */}
+      <section className="bg-jade py-16 text-center text-cream">
+        <div className="mx-auto max-w-2xl px-4">
+          <h2 className="font-display text-2xl font-bold tracking-wide md:text-3xl">
+            SIAP MENANGKAP <span className="text-gold">SINYAL CUAN?</span>
+          </h2>
+          <p className="mt-2 text-cream/70">Bergabung dengan pengguna yang sudah mengoptimalkan waktu mereka.</p>
           <Link
             to="/app"
-            className="mt-6 inline-block rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+            className="mt-6 inline-block rounded-full bg-gold px-8 py-3 text-sm font-bold text-jade transition hover:bg-jade-soft hover:text-gold"
           >
-            ⚡ Coba Scan Gratis
+            Mulai Sekarang — Gratis
           </Link>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-800">
-        <div className="mx-auto max-w-5xl px-4 py-8">
+      {/* 7. Footer */}
+      <footer className="bg-jade-dark py-10 text-cream/70">
+        <div className="mx-auto max-w-6xl px-4">
           <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/20 text-sm">📡</span>
-              <span className="text-sm font-bold">CuanRadar</span>
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gold/20 text-sm">📡</span>
+              <span className="font-display text-sm font-bold tracking-widest text-gold">CUANRADAR</span>
             </div>
-            <nav className="flex flex-wrap gap-4 text-xs text-slate-400">
-              <a href="#fitur" className="transition hover:text-slate-200">Fitur</a>
-              <a href="#platform" className="transition hover:text-slate-200">Platform</a>
-              <a href="#harga" className="transition hover:text-slate-200">Harga</a>
-              <Link to="/app" className="transition hover:text-slate-200">Aplikasi</Link>
+            <nav className="flex flex-wrap gap-4 text-sm">
+              <a href="#fitur" className="transition hover:text-gold">Tentang</a>
+              <a href="#cara-kerja" className="transition hover:text-gold">Cara Kerja</a>
+              <Link to="/app" className="transition hover:text-gold">Aplikasi</Link>
+              <a href="#harga" className="transition hover:text-gold">Harga</a>
+              <a href="#faq" className="transition hover:text-gold">FAQ</a>
             </nav>
           </div>
-          <p className="mt-6 text-[11px] leading-relaxed text-slate-600">
-            Disclaimer: CuanRadar bukan nasihat keuangan atau investasi. Semua angka reward adalah estimasi berlabel dengan
-            tanggal verifikasi, dan dapat berubah sewaktu-waktu. Peringkat ditentukan rubrik publik yang deterministik — mitra
-            tidak dapat membeli posisi. © 2026 CuanRadar.
+          <p className="mt-6 text-[11px] leading-relaxed text-cream/40">
+            Disclaimer: CuanRadar bukan nasihat keuangan atau investasi. Semua angka reward adalah estimasi berlabel
+            dengan tanggal verifikasi dan dapat berubah. Peringkat ditentukan rubrik publik yang deterministik — mitra
+            tidak dapat membeli posisi.
           </p>
+          <p className="mt-3 text-xs font-semibold text-gold/80">© 2026 CuanRadar. Waktu Anda Berharga.</p>
         </div>
       </footer>
     </div>
