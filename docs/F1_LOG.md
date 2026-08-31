@@ -61,10 +61,19 @@ UI · authentication · database · navigation · profile · rewards foundation 
 
 **Catatan:** edge function `scan` SUDAH diimplementasikan DAN **TELAH DI-DEPLOY** (2026-08-31, project `xtwowaolrroqdxpbwsvg`): quick = DB-first server-side (filter kategori terverifikasi), deep = discovery+extraction+review queue (terverifikasi: 3 kandidat wallet masuk review queue). Kuota dikonsumsi server-side saat scan berjalan. `public/_redirects` SPA fallback aktif — **`cuanradar.pages.dev` live dengan build terbaru (wrangler direct upload), semua deep-link 200**.
 
-## TODO setelah BUILD 3 (menuju BUILD 4)
+## BUILD 4 — Status (SELESAI, 2026-08-31)
 
-- [ ] **Deploy edge function** (user): `npx supabase login` → `npx supabase link --project-ref <ref>` → `npx supabase functions deploy scan` → `npx supabase secrets set DEEPSEEK_API_KEY=… SEARCH_PROVIDER=serper SEARCH_API_KEY=… SUPABASE_SERVICE_ROLE_KEY=…`.
-- [ ] Re-koneksi Git Cloudflare Pages (auto-deploy) — build terbaru (dengan `_redirects` + edge function wiring) akan live.
-- [ ] Seed `reward_offers` (estimated_menit, reward_value) via kurasi → `EstimationCalculator` beralih `basedOn: 'data'`.
-- [ ] Review queue UI (10+ kandidat menunggu) + alur tinjauan editor.
-- [ ] BUILD 4: reliability, edge cases, security hardening, prompt optimization, audit touch target ≥44px.
+| # | Tugas | Status | Catatan |
+|---|---|---|---|
+| 1 | Review queue UI | ✅ Selesai | `src/lib/reviewQueue.ts` + aksi `listCandidates` di edge function (baca review_queue via service role, tanpa migrasi RLS); section "Kandidat baru — menunggu tinjauan" di Rewards + indikator amber di Dashboard |
+| 2 | Prompt ekstraksi diperkuat | ✅ Selesai | engine + edge function: fokus aplikasi tersedia Indonesia; reward_types/payout hanya bila disebut (array kosong bila tidak) — mengurangi field kosong & mengarang |
+| 3 | Touch target ≥44px | ✅ Selesai | RewardCard (Simpan/Detail/Buka) & ScanControls (Quick/Deep) → `min-h-11` |
+| 4 | Reliability edge case | ✅ Selesai | listCandidates error → `[]` (tidak crash); terverifikasi: 5 kandidat terbaru terpanggil |
+| 5 | Deploy & verifikasi | ✅ Selesai | edge function redeployed; pages deploy via wrangler; commit `b4640de` |
+
+## TODO setelah BUILD 4 (menuju BUILD 5)
+
+- [ ] BUILD 5 (production readiness): security audit final, monitoring/analytics (PostHog/Sentry), operational controls, cost optimization, domain custom.
+- [ ] Seed `reward_offers` via kurasi (estimated_menit, reward_value) → `EstimationCalculator` beralih `basedOn:'data'`.
+- [ ] Alur tinjauan editor untuk review_queue (approve → reward_apps, reject → discard) — via CLI/SQL atau UI admin.
+- [ ] Ekspansi kategori & platform ke 50+ (F2).
