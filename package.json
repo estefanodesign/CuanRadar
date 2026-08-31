@@ -4,6 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "description": "CuanRadar — reward opportunity discovery assistant untuk Indonesia (F0 skeleton).",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
