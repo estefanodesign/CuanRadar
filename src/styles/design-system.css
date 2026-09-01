@@ -1,0 +1,451 @@
+/* CuanRadar — Design System: Industrial Skeuomorphism
+   Tokens terpusat (CSS custom properties) + register ke Tailwind v4 via @theme + util classes.
+   Mode: LIGHT aktif sekarang; DARK disiapkan (override di :root.dark — tinggal aktivasi nanti).
+   Cahaya konsisten dari TOP-LEFT 45°: highlight di atas/kiri, shadow di bawah/kanan (PRD gaya). */
+
+@import "tailwindcss";
+
+/* ═══════════════════ 1. DESIGN TOKENS (DNA) ═══════════════════ */
+
+/* Light mode (default) */
+:root {
+  /* Palet material (Industrial Palette) */
+  --background: #e0e5ec;            /* chassis — Level 0 */
+  --surface: #f0f2f5;               /* panel — Level +1 */
+  --muted: #d1d9e6;                 /* recessed — input, bezel, groove */
+  --foreground: #2d3436;            /* text utama */
+  --foreground-muted: #4a5568;      /* label/metadata (WCAG AA) */
+  --accent: #ff4757;                /* safety orange / Braun red */
+  --accent-foreground: #ffffff;
+  --accent-soft: #ffe4e6;           /* tint accent untuk hover ringan */
+  --border-shadow: #babecc;         /* sisi gelap pasangan neumorfik */
+  --border-light: #ffffff;          /* sisi terang / highlight */
+  --border-deep: #a3b1c6;           /* divider/garis kontras tinggi */
+
+  /* Neumorphic shadow system (The Core Visual Signature) */
+  --shadow-card: 8px 8px 16px var(--border-shadow), -8px -8px 16px var(--border-light);
+  --shadow-floating: 12px 12px 24px var(--border-shadow), -12px -12px 24px var(--border-light), inset 1px 1px 0 rgba(255,255,255,0.5);
+  --shadow-pressed: inset 6px 6px 12px var(--border-shadow), inset -6px -6px 12px var(--border-light);
+  --shadow-recessed: inset 4px 4px 8px var(--border-shadow), inset -4px -4px 8px var(--border-light);
+  --shadow-sharp: 4px 4px 8px rgba(0,0,0,0.15), -1px -1px 1px rgba(255,255,255,0.8);
+  --shadow-glow: 0 0 10px 2px rgba(255,71,87,0.6);
+  --shadow-glow-green: 0 0 10px 2px rgba(34,197,94,0.6);
+  --shadow-accent: 4px 4px 8px rgba(166,50,60,0.4), -4px -4px 8px rgba(255,100,110,0.4);
+
+  /* Radius (injection-molded plastic, soft) */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 30px;
+
+  /* Typography */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Motion */
+  --ease-mech: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark mode (DISUSUN — diaktifkan belakangan; palet charcoal/slate technical + accent sama) */
+:root.dark {
+  --background: #1f2329;
+  --surface: #262b31;
+  --muted: #16191d;
+  --foreground: #e0e5ec;
+  --foreground-muted: #a8b2d1;
+  --accent: #ff4757;
+  --accent-foreground: #ffffff;
+  --accent-soft: #3a1f24;
+  --border-shadow: #101317;
+  --border-light: #2c333a;
+  --border-deep: #343b44;
+  --shadow-card: 8px 8px 16px var(--border-shadow), -8px -8px 16px var(--border-light);
+  --shadow-floating: 12px 12px 24px var(--border-shadow), -12px -12px 24px var(--border-light), inset 1px 1px 0 rgba(255,255,255,0.08);
+  --shadow-pressed: inset 6px 6px 12px var(--border-shadow), inset -6px -6px 12px var(--border-light);
+  --shadow-recessed: inset 4px 4px 8px var(--border-shadow), inset -4px -4px 8px var(--border-light);
+  --shadow-accent: 4px 4px 8px rgba(0,0,0,0.5), -4px -4px 8px rgba(255,100,110,0.15);
+}
+
+/* Registerkan token inti ke Tailwind v4 agar bisa dipakai sbg utility (bg-background, text-accent, dll.) */
+@theme {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-foreground: var(--foreground);
+  --color-muted-fg: var(--foreground-muted);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-border-shadow: var(--border-shadow);
+  --color-border-light: var(--border-light);
+  --color-border-deep: var(--border-deep);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+}
+
+/* ═══════════════════ 2. BASE / GLOBAL ═══════════════════ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Noise overlay (matte plastic micro-texture) — dipasang di seluruh body via ::before */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+body * {
+  position: relative;
+}
+body #root {
+  position: relative;
+  z-index: 1;
+}
+
+/* ═══════════════════ 3. TEXTURE & PATTERN UTILITIES ═══════════════════ */
+
+/* Radial lighting hotspot top-left (perkuat arah cahaya) */
+.ins-light {
+  background-image: radial-gradient(circle at 12% 8%, rgba(255,255,255,0.35), transparent 55%);
+}
+
+/* Carbon fiber overlay (panel gelap / bezel device) — mix-blend-multiply */
+.ins-carbon {
+  background-image: url("https://www.transparenttextures.com/patterns/carbon-fibre.png");
+  background-repeat: repeat;
+  opacity: 0.18;
+  mix-blend-mode: multiply;
+  background-size: 180px 180px;
+}
+
+/* CRT scanlines (layar device / display) */
+.ins-scanlines {
+  background-image: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%);
+  background-size: 100% 4px;
+}
+
+/* Blueprint / schematic grid (bagian teknis) */
+.ins-blueprint {
+  background-image: linear-gradient(var(--border-deep) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-deep) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.12;
+}
+
+/* Radar visual (hybrid: dipertahankan, palet Industrial) — hanya transform/opacity, GPU-friendly */
+.radar-ring {
+  position: absolute;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+}
+.radar-sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: conic-gradient(from 0deg, color-mix(in srgb, var(--accent) 40%, transparent), transparent 70deg);
+  animation: radar-rotate 6s linear infinite;
+}
+@keyframes radar-rotate {
+  to { transform: rotate(360deg); }
+}
+.radar-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 80%, transparent);
+  animation: particle-ping 4s ease-out infinite;
+}
+@keyframes particle-ping {
+  0% { transform: scale(0.5); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+.radar-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 9999px;
+  background: var(--accent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 90%, transparent);
+}
+
+/* ═══════════════════ 4. COMPONENT UTILITIES (atlas industrial) ═══════════════════ */
+
+/* --- Cards (Bolted Modules) --- */
+.ins-card {
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  transition: transform 300ms var(--ease-mech), box-shadow 300ms var(--ease-mech);
+  position: relative;
+}
+.ins-card-elevated {
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-floating);
+}
+.ins-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-floating);
+}
+
+/* Corner screws (radial), posisi konsisten 12px dari tepi */
+.ins-screws {
+  background-image:
+    radial-gradient(circle at 14px 14px, var(--border-shadow) 2.5px, transparent 3.5px),
+    radial-gradient(circle at calc(100% - 14px) 14px, var(--border-shadow) 2.5px, transparent 3.5px),
+    radial-gradient(circle at 14px calc(100% - 14px), var(--border-shadow) 2.5px, transparent 3.5px),
+    radial-gradient(circle at calc(100% - 14px) calc(100% - 14px), var(--border-shadow) 2.5px, transparent 3.5px);
+}
+.ins-screws::after {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 14px 14px, rgba(255,255,255,0.5) 1px, transparent 2px),
+    radial-gradient(circle at calc(100% - 14px) 14px, rgba(255,255,255,0.5) 1px, transparent 2px),
+    radial-gradient(circle at 14px calc(100% - 14px), rgba(255,255,255,0.5) 1px, transparent 2px),
+    radial-gradient(circle at calc(100% - 14px) calc(100% - 14px), rgba(255,255,255,0.5) 1px, transparent 2px);
+}
+
+/* Vent slots (top-right, recessed) */
+.ins-vents {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  gap: 4px;
+}
+.ins-vents::before {
+  content: "";
+  width: 3px;
+  height: 22px;
+  border-radius: 9999px;
+  background-color: var(--muted);
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.15);
+}
+.ins-vents::after {
+  content: "";
+  width: 3px;
+  height: 22px;
+  border-radius: 9999px;
+  background-color: var(--muted);
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.15);
+}
+.ins-vents span {
+  width: 3px;
+  height: 22px;
+  border-radius: 9999px;
+  background-color: var(--muted);
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.15);
+}
+
+/* --- Buttons (Physical Keys) --- */
+.ins-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-lg);
+  padding: 0.8rem 1.5rem;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform 150ms var(--ease-mech), box-shadow 150ms var(--ease-smooth), background-color 200ms var(--ease-smooth), color 200ms var(--ease-smooth);
+  -webkit-tap-highlight-color: transparent;
+}
+.ins-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--accent);
+}
+
+/* Primary (safety orange) */
+.ins-btn-primary {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  box-shadow: var(--shadow-accent);
+}
+.ins-btn-primary:hover {
+  filter: brightness(1.08);
+}
+.ins-btn-primary:active {
+  transform: translateY(2px);
+  box-shadow: var(--shadow-pressed);
+}
+
+/* Secondary (chassis) */
+.ins-btn-secondary {
+  background-color: var(--background);
+  color: var(--foreground);
+  box-shadow: var(--shadow-card);
+}
+.ins-btn-secondary:hover {
+  color: var(--accent);
+}
+.ins-btn-secondary:active {
+  transform: translateY(2px);
+  box-shadow: var(--shadow-pressed);
+}
+
+/* Ghost (flat label) */
+.ins-btn-ghost {
+  background-color: transparent;
+  color: var(--foreground-muted);
+  box-shadow: none;
+}
+.ins-btn-ghost:hover {
+  background-color: var(--surface);
+  color: var(--foreground);
+  box-shadow: var(--shadow-recessed);
+}
+.ins-btn-ghost:active {
+  transform: translateY(2px);
+  box-shadow: var(--shadow-pressed);
+}
+
+/* --- Inputs (Data Slots) --- */
+.ins-input {
+  width: 100%;
+  min-height: 56px;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  background-color: var(--background);
+  box-shadow: var(--shadow-recessed);
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--foreground);
+  transition: box-shadow 200ms var(--ease-smooth);
+}
+.ins-input::placeholder {
+  color: color-mix(in srgb, var(--foreground-muted) 50%, transparent);
+}
+.ins-input:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-recessed), 0 0 0 2px var(--accent);
+}
+.ins-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- LED Status Indicators --- */
+.ins-led {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background-color: var(--led, var(--accent));
+  box-shadow: 0 0 10px 2px color-mix(in srgb, var(--led, var(--accent)) 60%, transparent);
+}
+.ins-led-green { --led: #22c55e; box-shadow: var(--shadow-glow-green); }
+.ins-led-red { --led: var(--accent); box-shadow: var(--shadow-glow); }
+.ins-led-amber { --led: #f59e0b; box-shadow: 0 0 10px 2px rgba(245,158,11,0.6); }
+.ins-led-pulse { animation: ins-led-pulse 2s ease-in-out infinite; }
+
+@keyframes ins-led-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* --- Monospace technical label (uppercase, tracked) --- */
+.ins-mono-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--foreground-muted);
+}
+
+/* --- Embossed heading (light bg: white highlight below text) --- */
+.ins-embossed {
+  text-shadow: 0 1px 0 var(--border-light), 0 -1px 1px rgba(0,0,0,0.12);
+}
+
+/* --- Physical connector pipe (How It Works) --- */
+.ins-pipe {
+  height: 0.75rem;
+  width: 100%;
+  border-radius: 9999px;
+  background-color: var(--muted);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* --- Recessed display screen --- */
+.ins-screen {
+  background-color: #101418;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-recessed);
+  color: #e0e5ec;
+}
+
+/* --- Hero device bezel (dark panel + carbon + scanlines) --- */
+.ins-device {
+  position: relative;
+  border-radius: var(--radius-xl);
+  padding: 1.25rem;
+  background-color: #171b1f;
+  box-shadow: var(--shadow-floating), inset 0 0 0 1px rgba(255,255,255,0.06);
+}
+.ins-device::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: url("https://www.transparenttextures.com/patterns/carbon-fibre.png");
+  background-size: 180px 180px;
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* --- Physical button side knob helper (device) --- */
+.ins-knob {
+  position: absolute;
+  right: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 34px;
+  border-radius: 3px;
+  background-color: #2c333a;
+  box-shadow: var(--shadow-sharp);
+}

@@ -1,45 +1,19 @@
-@import "tailwindcss";
+/* CuanRadar — CSS entry: Design System Industrial Skeuomorphism (Sesi 3 Frontend)
+   design-system.css berisi: import tailwindcss + tokens + base + util classes (ins-*). */
+@import "./styles/design-system.css";
 
-/* ——— CuanRadar theme (primary → Deep Plum #0B0713, harmoni dengan Champagne Gold & Off-White) ——— */
-@theme {
-  --color-jade: #0b0713; /* primary: deep plum (pengganti Deep Sea Jade #0B3B36) */
-  --color-jade-dark: #060308; /* plum paling dalam (footer, section terdalam) */
-  --color-jade-soft: #1a1129; /* plumm elegan (kartu highlight/permukaan terangkat) */
-  --color-gold: #d4af37;
-  --color-gold-soft: #e6c85c;
-  --color-cream: #f5f0e1;
-  --color-paper: #faf7f0;
-
-  --font-display: "Orbitron", ui-sans-serif, system-ui, sans-serif;
-  --font-body: "Exo 2", ui-sans-serif, system-ui, sans-serif;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  font-family: var(--font-body);
-  background-color: var(--color-cream);
-  color: var(--color-jade-dark);
-}
-
-::selection {
-  background-color: rgb(212 175 55 / 0.3);
-}
-
-/* ——— Radar visual (hanya transform & opacity — GPU-friendly, AI_RULES §11) ——— */
+/* ——— Radar visual (Industrial: aksen #ff4757; hanya transform/opacity — GPU-friendly, AI_RULES §11) ——— */
 .radar-ring {
   position: absolute;
   border-radius: 9999px;
-  border: 1px solid rgb(212 175 55 / 0.3);
+  border: 1px solid rgb(255 71 87 / 0.3);
 }
 
 .radar-sweep {
   position: absolute;
   inset: 0;
   border-radius: 9999px;
-  background: conic-gradient(from 0deg, rgb(212 175 55 / 0.35), transparent 70deg);
+  background: conic-gradient(from 0deg, rgb(255 71 87 / 0.35), transparent 70deg);
   animation: radar-rotate 6s linear infinite;
 }
 
@@ -54,8 +28,8 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 9999px;
-  background: var(--color-gold);
-  box-shadow: 0 0 8px rgb(212 175 55 / 0.8);
+  background: var(--color-accent, #ff4757);
+  box-shadow: 0 0 8px rgb(255 71 87 / 0.8);
   animation: particle-ping 4s ease-out infinite;
 }
 
@@ -81,6 +55,6 @@ body {
   height: 10px;
   margin: -5px 0 0 -5px;
   border-radius: 9999px;
-  background: var(--color-gold);
-  box-shadow: 0 0 12px rgb(212 175 55 / 0.9);
+  background: var(--color-accent, #ff4757);
+  box-shadow: 0 0 12px rgb(255 71 87 / 0.9);
 }

@@ -107,5 +107,49 @@
 
 ---
 
+## Sesi 3 — 2026-08-30 · Design System Industrial Skeuomorphism (Landing hybrid)
+
+**Konteks:** User meminta integrasi design system **Industrial Skeuomorphism** ke codebase. Keputusan: cakupan **Landing dulu**; dependensi **lucide-react saja**, animasi & shadow CSS murni; tema **light sekarang + dark disiapkan**.
+
+### Keputusan sesi
+
+1. **Token terpusat** — `src/styles/design-system.css`: CSS custom properties untuk palet & shadow + register ke Tailwind v4 via `@theme`, sehingga utility `bg-background`, `text-foreground`, `border-border-shadow`, `bg-accent/12`, dll. berfungsi.
+2. **Light + dark prep** — `:root` (light, aktif) & `:root.dark` (palet charcoal/slate technical, disiapkan — belum diaktifkan). Cahaya konsisten top-left 45°.
+3. **Hybrid** — palet Industrial + aksen `#ff4757` menggantikan tema lama (jade/gold), **radar visual & fitur landing dipertahankan** (count-up, billing toggle, konten, struktur).
+4. **Zero-dependency besar** — hanya `lucide-react` (installed) dipasang; util classes CSS (`ins-card`, `ins-btn`, `ins-led`, `ins-screws`, `ins-pipe`, `ins-mono-label`, dll.) yang menyediakan pola neumorphic, tak ada Framer Motion.
+5. **Font** — Inter (sans) + JetBrains Mono (angka/metadata) menggantikan Orbitron/Exo 2 (`index.html`).
+
+### Perubahan
+
+| # | Perubahan | File | Ref |
+|---|---|---|---|
+| 1 | Design tokens + base + util classes industrial | `src/styles/design-system.css` (BARU) | token §2, komponen §3 |
+| 2 | Entry styles → design-system | `src/index.css` | — |
+| 3 | Font Inter + JetBrains Mono | `index.html` | typography §2 |
+| 4 | Landing restyle hybrid (palet industrial + radar dipertahankan) | `src/pages/LandingPage.tsx` | §1, §3 |
+| 5 | Dependensi | `package.json` (`lucide-react@1.38.0`) | icon §7 |
+
+### Keputusan desain
+
+- **Neumorphic dual-shadow** (card/floating/pressed/recessed) via CSS vars; interaksi: button `translate-y-[2px]` + shadow invert (pressed), card `hover:-translate-y-1` + naik ke shadow-floating. Easing mekanik `--ease-mech` (spring/bounce subtle).
+- **Signature elements**: corner screws (`.ins-screws` radial), vent slots (`.ins-vents`), LED status (`.ins-led` + pulse + glow), mono-label uppercase, embossed heading, noise overlay di body, panel teknis gelap (`.ins-screen`) untuk stats, pipe fisik untuk "Cara Kerja".
+- **Radar hybrid**: dipertahankan tapi palet aksen (#ff4757) — tetap GPU-friendly (transform/opacity), sesuai AI_RULES §11.
+- **Aksesibilitas**: `--foreground-muted` = #4a5568 (WCAG AA); fokus `ring-2 ring-accent ring-offset`; touch target ≥48px via `.ins-btn` padding; kontras text muted disesuaikan.
+- **Catatan penting**: ditemukan tema lama **jade/gold + radar** di `LandingPage.tsx`/`index.css` yang belum saya lihat di awal sesi (iteration eksternal). Diputuskan hybrid: ganti palet, pertahankan radar & fitur — tidak menghapus fitur bekerja (AI_RULES §17).
+
+### Status implementasi
+
+- [x] Design tokens terpusat + dark prep + util classes (`design-system.css`)
+- [x] Font Inter + JetBrains Mono (`index.html`)
+- [x] Landing restyle hybrid — radar & fitur dipertahankan
+- [x] Typecheck + build hijau (227 modul; CSS gzip 6,50 kB); semua route smoke-tested 200, radar ter-embed di landing
+- [x] `lucide-react` tersedia (belum dipakai di landing — siap untuk ikon di sesi berikutnya)
+
+### Catatan lanjutan / untuk disambungkan
+
+- Dark mode: aktifkan dengan menambah class `dark` pada `<html>` (token sudah siap di `:root.dark`).
+- Ikon lucide belum dipakai di landing (emoji saat ini); bisa dialihkan ke komponen ikon lucide bila diinginkan.
+- Halaman app (Dashboard/Scan/Detail/dll.) belum di-restyle ke Industrial — target sesi berikutnya (App shell & komponen inti).
+- Terjadi perubahan eksternal tak terduga di repo (chunk `supabase`, `reviewQueue`, initial gzip berubah). Biarkan sebagai pekerjaan paralel; tidak disentuh.
 
 ---
