@@ -71,9 +71,22 @@ UI · authentication · database · navigation · profile · rewards foundation 
 | 4 | Reliability edge case | ✅ Selesai | listCandidates error → `[]` (tidak crash); terverifikasi: 5 kandidat terbaru terpanggil |
 | 5 | Deploy & verifikasi | ✅ Selesai | edge function redeployed; pages deploy via wrangler; commit `b4640de` |
 
-## TODO setelah BUILD 4 (menuju BUILD 5)
+## BUILD 5 — Status (SELESAI, 2026-08-31)
 
-- [ ] BUILD 5 (production readiness): security audit final, monitoring/analytics (PostHog/Sentry), operational controls, cost optimization, domain custom.
+| # | Tugas | Status | Catatan |
+|---|---|---|---|
+| 1 | Operational controls (edge function) | ✅ Selesai | **Deep Scan wajib login** (401) — tamu hanya Quick Scan DB-first; **throttle tamu** (max 20 quick/10 menit → 429); **dedup kandidat vs katalog + review queue** (hindari duplikat berulang) |
+| 2 | Sanitasi error server | ✅ Selesai | Catch → pesan generik + `console.error` (detail internal tidak bocor ke client — AI_RULES §18) |
+| 3 | Analytics (PostHog opsional) | ✅ Selesai | `src/lib/analytics.ts` — posthog-js **dynamic import** (code-split, no-op tanpa key); event: `landing_view`, `page_view`, `scan_started/completed/failed`, `scan_blocked_login` |
+| 4 | UX gating Deep Scan | ✅ Selesai | ScanPage: deep tanpa login → pesan "Masuk terlebih dahulu" (tanpa panggil server) |
+| 5 | Security audit | ✅ Selesai | Bundle **bersih dari secret** (grep `sbp_`/JWT/service-role di dist) ✓; RLS tetap; env handling aman |
+| 6 | Performa | ✅ Selesai | posthog di-split (tidak di bundle awal); index 84,67 kB gzip + supabase chunk 54,07 kB (ter-cache); tanpa warning chunk |
+| 7 | Deploy & verifikasi | ✅ Selesai | edge function redeployed (401/429 terverifikasi); pages deploy via wrangler; commit `af2f492` |
+
+## TODO setelah BUILD 5 (Fase 2 — Growth)
+
+- [ ] **Opsional user:** key PostHog di env Pages (`VITE_POSTHOG_KEY`, `VITE_POSTHOG_HOST`) → analytics aktif.
+- [ ] **Opsional user:** domain custom `cuanradar.id` + DNS Cloudflare (DEPLOYMENT §3.4).
 - [ ] Seed `reward_offers` via kurasi (estimated_menit, reward_value) → `EstimationCalculator` beralih `basedOn:'data'`.
-- [ ] Alur tinjauan editor untuk review_queue (approve → reward_apps, reject → discard) — via CLI/SQL atau UI admin.
-- [ ] Ekspansi kategori & platform ke 50+ (F2).
+- [ ] Alur tinjauan editor untuk review_queue (approve → reward_apps, reject → discard).
+- [ ] F2: affiliate/iklan, komunitas (payout_reports), ekspansi 50+ platform, 10k MAU.
