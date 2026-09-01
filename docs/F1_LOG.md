@@ -1,6 +1,6 @@
-# CuanRadar — Log Fase 1 · BUILD 1 (Foundation)
+# CuanRadar — Log Fase 1 · BUILD 1–5 (Pilot + Production)
 
-*Status: BERJALAN · Mulai: 2026-08-30 · Referensi: `docs/ROADMAP.md` (F1), `PRD-CuanRadar.md` §50–59, `docs/ARCHITECTURE.md`, `docs/AI_RULES.md`*
+*Status: **SELESAI** (2026-08-31) — Fase 1 tuntas; Fase 2 dimulai dari BUILD 6 · Mulai: 2026-08-30 · Referensi: `docs/ROADMAP.md` v1.2 (BUILD 4–5 di F1), `PRD-CuanRadar.md` §50–59, `docs/ARCHITECTURE.md`, `docs/AI_RULES.md`*
 
 ## Cakupan BUILD 1 (PRD §64)
 

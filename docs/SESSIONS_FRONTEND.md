@@ -148,8 +148,129 @@
 ### Catatan lanjutan / untuk disambungkan
 
 - Dark mode: aktifkan dengan menambah class `dark` pada `<html>` (token sudah siap di `:root.dark`).
-- Ikon lucide belum dipakai di landing (emoji saat ini); bisa dialihkan ke komponen ikon lucide bila diinginkan.
+- **KOREKSI (Sesi 6):** `lucide-react` yang disebut di sesi ini **di-uninstall** (masalah versi) & diganti SVG inline. Jangan pakai lucide-react.
 - Halaman app (Dashboard/Scan/Detail/dll.) belum di-restyle ke Industrial — target sesi berikutnya (App shell & komponen inti).
 - Terjadi perubahan eksternal tak terduga di repo (chunk `supabase`, `reviewQueue`, initial gzip berubah). Biarkan sebagai pekerjaan paralel; tidak disentuh.
 
 ---
+
+## Sesi 4 — 2026-08-30 · Dark Mode Industrial Skeuomorphism
+
+**Konteks:** Landing sudah restyle Industrial (Sesi 3). Sesi ini mengaktifkan **dark mode** yang token-nya sudah disiapkan di `design-system.css` (`:root.dark`).
+
+### Keputusan sesi
+
+1. **Mekanisme tema** — `ThemeProvider` (`src/lib/theme.tsx`): mode `light | dark | system`; persist ke `localStorage` (`cuanradar.theme.v1`); ikut preferensi OS saat `system` (listener `matchMedia`); tempel/reset class `dark` pada `<html>`; sinkronkan `<meta name="theme-color">` (browser chrome) agar konsisten dengan chassis (light `#e0e5ec` / dark `#1f2329`).
+2. **Toggle** — `ThemeToggle.tsx`: saklar industrial (button pressed/recessed + LED), ikon lucide Sun/Moon/Monitor, tooltip + ARIA, cycle system→light→dark.
+3. **Token dark** — di `design-system.css`: palet charcoal/slate (`--background:#1f2329`, `--surface:#262b31`, `--foreground:#e0e5ec`, `--foreground-muted:#a8b2d1`, `--accent:#ff4757`), neumorphic shadow terbalik (border-shadow gelap, border-light terang).
+4. **Sapuan hardcode** — elemen yang menyandang nilai terang di light di-override saat dark: `ins-embossed` (highlight putih→gelap), `.ins-screws::after` & `.ins-vents` (highlight diredam), noise overlay opasitas turun (0.55→0.35), `ins-light` hotspot diredupkan.
+
+### Perubahan
+
+| # | Perubahan | File |
+|---|---|---|
+| 1 | ThemeProvider (light/dark/system + persist) | `src/lib/theme.tsx` (BARU) |
+| 2 | ThemeToggle (saklar industri + LED + lucide) | `src/components/ThemeToggle.tsx` (BARU) |
+| 3 | Bungkus app dengan ThemeProvider | `src/main.tsx` |
+| 4 | Pasang toggle di header landing | `src/pages/LandingPage.tsx` |
+| 5 | Override dark untuk elemen hardcoded | `src/styles/design-system.css` |
+| 6 | Dependensi `lucide-react` (Sudah terpasang) | `package.json` |
+
+### Keputusan desain
+
+- **Dark bukan sekadar invert**: palet charcoal/slate technical (bukan hitam murni) agar tetap terkesan "material", lalu neumorphic shadow memakai pasangan gelap/terang (border-shadow `#101317` vs border-light `#2c333a`). Aksen `#ff4757` tetap = konsistensi brand.
+- **Semua warna landing sudah token-based** (`bg-background`, `text-foreground`, `border-border-shadow`, `text-accent`), sehingga dark otomatis berlaku tanpa edit per komponen.
+- **Aksesibilitas**: `--foreground-muted:#a8b2d1` (AA di dark); toggle punya label ARIA & tooltip; kontras LED tetap.
+- **Persistensi** di localStorage sehingga pilihan pengguna tidak hilang saat navigasi/muat ulang.
+
+### Status implementasi
+
+- [x] ThemeProvider + ThemeToggle + wrap main + pasang di landing
+- [x] Override dark untuk elemen hardcoded (embossed/screws/vents/noise/light)
+- [x] Typecheck + build hijau (Landing gzip 6,28 kB; semua route smoke-tested 200 dengan dark bundle)
+
+### Catatan lanjutan / untuk disambungkan
+
+- **Sisa halaman app** (Dashboard/Scan/Detail/dll.) masih slate/emerald lama dan **belum** memakai token Industrial — dark toggle tidak akan memengaruhi halaman tersebut secara visual sampai di-restyle. Target: sesi berikutnya (App shell & komponen inti → Industrial + adaptif dark).
+- **KOREKSI (Sesi 6):** `lucide-react` yang disebut di sesi ini **di-uninstall** & diganti SVG inline satu tombol toggle. Jangan pakai lucide-react.
+
+---
+
+## Sesi 5 — 2026-08-30 · Revisi Landing (nav floating + toggle mode)
+
+**Konteks:** Hasil review di `http://localhost:5173/`. Dua revisi: header floating saat scroll, dan tombol theme diperkecil + ikon per tombol.
+
+### Revisi
+
+1. **Nav header floating** — header diubah dari `sticky` statis menjadi `fixed inset-x-0 top-0`; saat halaman digulir (`useScrolled(threshold=24)` via passive scroll listener) header "terangkat": transisi border-b + `bg-background/85` + `backdrop-blur-xl` + `shadow-sharp`. Padding mengecil (`py-4` → `py-2.5`) saat scrolled untuk efek menyusut. Hero diberi `pt-24`/`md:pt-32` agar konten tidak tertutup header fixed.
+2. **Toggle mode diperkecil + ikon** — `ThemeToggle` dirombak dari satu tombol berubah-ikon menjadi **dua tombol eksklusif** (terang = `Sun`, gelap = `Moon`), ukuran kecil `h-6 w-6` dengan ikon `h-3 w-3`, `aria-pressed` menandai mode aktif, container `ins-card rounded-full p-0.5`. Saklar aktif memakai `ins-btn-primary`, non-aktif `ins-btn-ghost text-foreground-muted`.
+
+### Perubahan
+
+| # | Perubahan | File |
+|---|---|---|
+| 1 | Header floating + `useScrolled` + padding hero disesuaikan | `src/pages/LandingPage.tsx` |
+| 2 | ThemeToggle dua tombol kecil + ikon Sun/Moon | `src/components/ThemeToggle.tsx` |
+
+### Status implementasi
+
+- [x] Header floating (fixed + naik saat scroll)
+- [x] ThemeToggle diperkecil + ikon matahari/bulan per tombol
+- [x] Typecheck + build hijau (Landing gzip 6,23 kB); landing smoke-tested 200
+
+---
+
+## Sesi 6 — 2026-08-30 · Perbaikan & Audit (lucide→SVG, toggle 1 tombol, fix header/radar, refactor `.ins-btn`)
+
+**Konteks:** Review di `localhost:5173` melaporkan: (a) ikon light/dark tidak muncul, (b) header belum floating, (c) kotak muncul di sekitar radar, (d) tombol "lebih pendek" tidak efektif. Sesi ini memperbaiki akar masalah & merapikan file.
+
+### ⚠️ KOREKSI catatan sesi 3 & 4 (penting — sebelumnya keliru)
+- **Sesi 3 & 4 menyebut `lucide-react` dipakai & tersedia. Faktanya `lucide-react@1.38.0` bermasalah** (bukan versi upstream resmi; `npm view` gagal EPERM; dan ikon `Sun`/`Moon` tidak menghasilkan komponen SVG yang benar pada bundle — tanpa `<svg>` di output). **Diputuskan untuk UNINSTALL lucide-react dan mengganti ikon dengan SVG inline zero-dep.** Jadi semua referensi "lucide-react dipakai" di sesi 3/4 **tidak berlaku lagi**.
+
+### Perbaikan
+
+1. **Ikon light/dark tidak muncul** — akar masalah ganda:
+   - `.ins-btn` menetapkan `padding: 0.8rem 1.5rem` yang menimpa utility `p-0`/`h-8 w-8` (specificity & urutan cascade; `.ins-btn` muncul setelah utility Tailwind) → tombol ikon jadi besar & isi terdesak tak terlihat.
+   - `lucide-react` tidak menghasilkan SVG benar (lihat KOREKSI di atas).
+   - **Fix:** (a) `ThemeToggle` → **satu tombol** (bukan dua) yang menampilkan ikon mode AKTIF (matahari=terang / bulan=gelap), toggle di klik; (b) sumber ikon → **SVG inline** `SunIcon`/`MoonIcon` dengan `width`/`height` eksplisit + `stroke=currentColor` (pasti ter-render); (c) tambah class `.ins-icon-btn` (padding:0, gap:0, border-radius:9999px) agar ukuran tombol ikon terkendali.
+2. **Header belum floating** — aturan `body * { position: relative; }` (yang saya tulis di design-system) menimpa `position: fixed` pada `<header>` (specificity `body *` > `.fixed`) sehingga header jadi relative. **Fix:** hapus `body * { position: relative }` & `body #root` (diganti `#root { position: relative; z-index:1 }`).
+3. **Kotak di sekitar radar** — wrapper radar `rounded-full ins-card` (border-radius `--radius-lg` 16px menimpa `rounded-full`, jadi rounded-square) + latar `inset-3 ... shadow-recessed`. **Fix:** kembalikan `RadarVisual` ke desain radar murni — container polos `relative`, hanya `radar-ring`×3 + `radar-sweep` + `radar-particle`×5 + `radar-center`. Tanpa `ins-card`, tanpa latar, tanpa label.
+4. **Tombol "lebih pendek" tidak efektif** — `.ins-btn` padding `0.8rem 1.5rem` menimpa utility `py-1.5`/`py-2`. **Fix:** hapus `padding` dari `.ins-btn` default (padding kini diatur per tombol via `px-* py-*`), dan tambahkan `px-4 py-2` pada tombol CTA pricing yang sebelumnya tanpa px/py.
+
+### Perubahan
+
+| # | Perubahan | File |
+|---|---|---|
+| 1 | ThemeToggle → satu tombol, ikon SVG inline (Sun/Moon) | `src/components/ThemeToggle.tsx` |
+| 2 | Tambah `.ins-icon-btn`; hapus `padding` dari `.ins-btn`; hapus `body *{position:relative}` | `src/styles/design-system.css` |
+| 3 | RadarVisual kembali ke radar murni (tanpa kotak/shadow/label) | `src/pages/LandingPage.tsx` |
+| 4 | Hapus duplikasi `style={{padding:0}}` (kini `ins-icon-btn`) | `src/components/ThemeToggle.tsx` |
+| 5 | Uninstall `lucide-react` (problematic, tidak dipakai) | `package.json`, `package-lock.json` |
+
+### Keputusan desain
+
+- **Satu tombol toggle** lebih bersih daripada dua: menghemat ruang header & menghindari kebingungan dua state. Ikonnya merepresentasikan mode yang akan di-switch (matahari saat light → klik untuk gelap; bulan saat dark → klik untuk terang).
+- **SVG inline > lucide-react** di project ini: zero-dependency, bundle lebih kecil, pasti ter-render, dan konsisten dgn keputusan "CSS murni" (tanpa Framer Motion / paket ikon eksternal).
+- **`body * { position: relative }` adalah anti-pattern** — merusak `fixed`/`absolute` di seluruh pohon. Posisi diatur per elemen. (AI_RULES §10: hindari style global yang menimpa utility.)
+- **Padding tombol dari utility, bukan dari class base** — idiomatis Tailwind & menghilangkan konflik cascade.
+
+### Status implementasi
+
+- [x] Toggle 1 tombol + SVG inline (Sun/Moon) — ikon ter-embed (verified di bundle: `stroke:currentColor`, `viewBox`)
+- [x] `.ins-btn` tanpa padding; `.ins-icon-btn` untuk tombol ikon; hapus `body *{position:relative}`
+- [x] RadarVisual kembali murni (no kotak/shadow)
+- [x] Uninstall lucide-react
+- [x] Typecheck + build hijau; semua route smoke-tested 200
+- [x] Catatan sesi 3/4 dikoreksi (lucide-react tidak dipakai)
+
+### Catatan penting untuk sesi lain
+
+- **`lucide-react` TIDAK ADA di dependencies & TIDAK boleh dipakai** (masalah versi). Gunakan SVG inline untuk ikon.
+- **Jangan pakai `body * { position: ... }`** — merusak positioning.
+- Radio hero kini `RadarVisual` = ring murni; jangan menambah wrapper `ins-card`/latar di dalamnya (menimbulkan kotak).
+- Halaman app (Dashboard/Scan/Detail/dll.) masih theme lama (slate/emerald) — belum Industrial; dark toggle tidak memengaruhi halaman itu sampai di-restyle. Target: sesi berikutnya.
+
+---
+
+
+

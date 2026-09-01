@@ -41,27 +41,29 @@ Stack pilot: Vite + React + TypeScript + TanStack + Tailwind CSS (Cloudflare Pag
 ## Status Rencana & Asumsi
 
 - **Disetujui:** PRD v1.1 + 8 dokumen pendukung (audit konseptual & integrasi strategi selesai). **Stack & Monetisasi final** — stack: Vite/Supabase/Cloudflare tanpa Next.js/Vercel (`docs/ARCHITECTURE.md` §1A); monetisasi: subscription-plan Pro disetujui (Rp39rb/bln, QRIS/e-wallet, kuota 3/7/15 & 4/8/16 — `docs/MONETIZATION.md` v1.3).
-- **Fase 0 (berjalan):** pre-seed katalog **30 platform** selesai (`data/seed-platforms.json`), skeleton repo + CI disiapkan, cek trademark informal bersih. Detail: `docs/F0_LOG.md`.
-- **Fase 1 (BUILD 1–2 SELESAI):** landing page + aplikasi responsive (desktop/mobile) · UI terhubung Supabase (`reward_apps`, 30 platform ter-seed) · engine scan DB-first + provider nyata (DeepSeek/Brave/Serper) · Deep Scan teruji (10 kandidat di review queue). Detail: `docs/F1_LOG.md`.
+- **Fase 0 ✅:** pre-seed katalog **30 platform** selesai (`data/seed-platforms.json`), skeleton repo + CI, cek trademark informal bersih. Detail: `docs/F0_LOG.md`.
+- **Fase 1 ✅ (BUILD 1–5, pilot production-ready):** landing + aplikasi responsive · UI terhubung Supabase (30 platform ter-seed) · engine scan DB-first + Deep Scan (edge function, review queue) · CuanScore & provenance · kuota server-side · review queue UI · production hardening (deep wajib login, throttle, analytics opsional) · **live di `cuanradar.pages.dev`**. Detail: `docs/F1_LOG.md`.
+- **Fase 2 ⏳ (BUILD 6–7, berikutnya):** komunitas (payout_reports, moderasi), tinjauan editor, pilot subscription Pro (QRIS/e-wallet), ekspansi 50+ platform. Detail: `docs/ROADMAP.md`.
 - **Asumsi terbuka:** (1) stack diadopsi dari PRD (Supabase + Cloudflare + Vite) — **Next.js/Vercel resmi ditutup untuk pilot** (keputusan founder: churn update & keterbatasan komersial Vercel); SEO di F2 via prerender/Astro bila diperlukan (lihat `docs/ARCHITECTURE.md` §1A); (2) auth di pilot dipertahankan (konsisten dengan credit & saved apps); (3) satu PRD kanonik (file root); (4) semua angka reward berlabel `last_verified_at` dan bisa usang — diungkapkan jujur; (5) cek trademark nama "CuanRadar" dilakukan di F0.
 - **Bahasa:** Bahasa Indonesia (v1); Inggris untuk ekspansi (di luar cakupan pilot).
 
-## Handover — Posisi Saat Ini & Item Terbuka (update 2026-08-30)
+## Handover — Posisi Saat Ini & Item Terbuka (update 2026-08-31)
 
-**Posisi:** F0 selesai · F1 BUILD 1–2 selesai · **berikutnya: BUILD 3** (verifikasi rubrik tiga sumbu, scoring 6 faktor, cache+TTL, Budget Governor, cost tracking, dedup kandidat vs DB, integrasi edge function scan API).
+**Posisi:** F0 ✅ · **F1 (BUILD 1–5) ✅ selesai** — pilot production-ready, live di `cuanradar.pages.dev` (landing design system industrial + aplikasi, scan quick/deep via edge function, kuota server-side, review queue UI). **Berikutnya: F2 · BUILD 6** (komunitas & monetisasi — `docs/ROADMAP.md`).
 
-**Terbuka / butuh tindakan user:**
-1. **Cloudflare Pages**: koneksi Git terputus — re-koneksi di dashboard (Settings → Builds & deployments → Reconnect) + pastikan env `NODE_VERSION=22`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (Production & Preview).
-2. **`.env` lokal** (ter-ignore git): berisi Supabase keys + `DEEPSEEK_API_KEY` + `SEARCH_PROVIDER=serper` + `SEARCH_API_KEY` — sudah terisi & Deep Scan teruji. Jangan di-commit.
-3. **Review queue** di Supabase: 10 kandidat entertainment menunggu tinjauan (`review_queue_items`).
-4. **Credential git** mesin: PAT `estefanodesign` (scope `repo`+`workflow`) tersimpan di Windows Credential Manager — push dari mesin ini berfungsi.
+**Terbuka / butuh tindakan user (F2):**
+1. **Opsional:** key PostHog (`VITE_POSTHOG_KEY`, `VITE_POSTHOG_HOST`) di env Cloudflare Pages → analytics aktif.
+2. **Opsional:** domain custom `cuanradar.id` + DNS Cloudflare (DEPLOYMENT §3.4).
+3. **Tinjauan editor review queue**: kandidat menunggu approve/reject (BUILD 6).
+4. **Lighthouse ≥90 & beta 100 pengguna** — gerbang awal F2.
+5. **Credentials mesin**: git PAT `estefanodesign` (repo+workflow) & `.env` (Supabase/DeepSeek/Serper/Cloudflare) tersimpan lokal — jangan di-commit.
 
 **Aturan kerja:** ikuti `docs/AI_RULES.md` (v3) — termasuk: jangan ubah stack tanpa persetujuan, jangan publish kandidat AI langsung (review queue dulu), uang = integer sen IDR, tiga sumbu status terpisah.
 
 ## Mulai dari Mana
 
 1. Baca [`PRD-CuanRadar.md`](PRD-CuanRadar.md) (v1.1) sebagai baseline.
-2. Baca [`docs/ROADMAP.md`](docs/ROADMAP.md) — mulai **Fase 0**: pre-seed katalog 20–30 platform & finalisasi rubrik.
+2. Baca [`docs/ROADMAP.md`](docs/ROADMAP.md) — posisi saat ini: **F1 selesai, lanjut F2 BUILD 6**.
 3. Referensi teknis saat implementasi: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 4. Log kerja terbaru: [`docs/F1_LOG.md`](docs/F1_LOG.md).
 

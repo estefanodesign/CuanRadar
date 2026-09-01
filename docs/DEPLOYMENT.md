@@ -1,18 +1,18 @@
 # CuanRadar — Strategi Deployment
 
-*Revisi: v1.0 · 2026-08-30 · Living document · Referensi: `docs/ARCHITECTURE.md` (stack final), `docs/ROADMAP.md`, `docs/BUDGET.md`*
+*Revisi: v1.1 · 2026-08-31 · Living document · Referensi: `docs/ARCHITECTURE.md` (stack final), `docs/ROADMAP.md` (v1.2: BUILD 4–5 di F1), `docs/BUDGET.md`*
 
 ## 1. Kapan Deployment Dilakukan (per fase)
 
 | Fase | Deployment | Tujuan |
 |---|---|---|
 | **F0** | — | Repo + CI (typecheck/build) saja; belum ada URL publik |
-| **F1 (BUILD 1–3)** | **Preview otomatis** (Cloudflare Pages per commit/PR) | Developer & tester melihat hasil tiap perubahan; tanpa mengganggu pengguna |
-| **Akhir F1** | **Soft-launch URL publik** (`cuanradar.pages.dev`) | Beta 100 pengguna (exit criteria F1) — data nyata, feedback awal |
-| **F2 (BUILD 5 — DEPLOYMENT RESMI)** | **Production hardening**: domain custom, security audit, monitoring, analytics, cost controls | Siap untuk 10k MAU & monetisasi |
+| **F1 (BUILD 1–3)** | **Preview otomatis** (Cloudflare Pages per commit/PR) | Developer & tester melihat hasil tiap perubahan |
+| **F1 (BUILD 4–5 — PRODUCTION ✅)** | **Soft-launch & production**: `cuanradar.pages.dev` live (wrangler direct upload), edge function `scan` deployed, security audit, operational controls, analytics opsional, cost optimization | Pilot production-ready; beta 100 pengguna |
+| **F2 (BUILD 6–7)** | Domain custom `cuanradar.id` + DNS Cloudflare · monitoring/analytics aktif · staging/prod Supabase terpisah | Siap untuk 10k MAU & monetisasi |
 | **F3** | Scale: PWA push, payment gateway (Midtrans/Xendit), B2B | Pertumbuhan & pendapatan |
 
-**Kesimpulan:** deployment resmi/production di **F2 · BUILD 5**, tetapi **deployment bertahap dimulai sejak F1** (preview) dan **soft-launch di akhir F1** untuk beta. Jangan menunggu BUILD 5 untuk pertama kali deploy — uji alur deploy sedini mungkin (prinsip: CI/CD sedini mungkin, hardening belakangan).
+**Kesimpulan:** deployment resmi/production tercapai di **F1 · BUILD 5** (live 2026-08-31). Prinsip tetap: CI/CD sedini mungkin, hardening belakangan. Item F2: domain custom, analytics aktif, dan pemisahan staging/prod.
 
 ## 2. Di Mana Deployment (target sesuai keputusan stack — tanpa Next.js/Vercel)
 
@@ -25,7 +25,7 @@
 | Scan queue & scheduled jobs | pg-boss + pg_cron di Supabase Postgres | Tanpa platform tambahan |
 | Source control & CI | **GitHub** + GitHub Actions | Sudah ada (typecheck+build); deploy dihubungkan ke Pages |
 | AI & Search | deepseek + search free-tier (eksternal) | Via env/secrets, bukan "deployment" internal |
-| Monitoring & Analytics | PostHog + Sentry (free tier) | F2 BUILD 5 |
+| Monitoring & Analytics | PostHog + Sentry (free tier) | F1 BUILD 5 (PostHog opsional; aktif penuh di F2) |
 
 ## 3. Bagaimana Deployment Dilakukan
 
@@ -53,7 +53,7 @@ Cloudflare Pages Git integration (connect repo GitHub)
 | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | **Cloudflare Pages → Settings → Environment variables** (production & preview) | Client-safe; **tidak di-commit** |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase Secrets (edge functions) + `.env` lokal untuk script seed | **Server-side only; JANGAN pernah di frontend** |
 | `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` | GitHub Secrets — **hanya bila** memilih deploy via wrangler-action (alternatif Git integration) | Tidak wajib untuk jalur rekomendasi |
-| `VITE_POSTHOG_KEY` (dll.) | Cloudflare Pages env | F2 BUILD 5 |
+| `VITE_POSTHOG_KEY` (dll.) | Cloudflare Pages env | F1 BUILD 5 (opsional) / aktif di F2 |
 
 ### 3.3 Environments
 
@@ -89,19 +89,18 @@ npx supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<key>
 
 ## 4. Checklist per Fase
 
-**F1 (sekarang):**
-- [ ] Buat project Cloudflare Pages, connect GitHub repo (build `npm run build`, output `dist`).
-- [ ] Buat project Supabase **region Singapore**; jalankan migrasi + `npm run db:seed`; isi env Pages.
-- [ ] Pastikan preview URL muncul tiap PR; UI memakai data Supabase (bukan seed lokal) — BUILD 2.
+**F1 — SELESAI (2026-08-31):**
+- [x] Project Cloudflare Pages + GitHub; build `npm run build`, output `dist`; preview per PR.
+- [x] Project Supabase (Singapore); migrasi `0001_init.sql`; `npm run db:seed` (30 platform); env Pages terisi.
+- [x] UI memakai data Supabase; edge function `scan` deployed (quick DB-first + deep discovery + listCandidates).
+- [x] URL publik `cuanradar.pages.dev` live (wrangler direct upload); disclaimers tampil.
+- [x] Production hardening: security audit, operational controls (deep wajib login, throttle tamu), sanitasi error, analytics PostHog opsional, cost optimization.
+- [ ] *(tersisa F2)* Lighthouse ≥90 terukur; beta 100 pengguna; logging/cost monitoring aktif penuh (PRD §43).
 
-**Akhir F1 (soft-launch beta 100 user):**
-- [ ] URL publik `cuanradar.pages.dev` aktif; disclaimers tampil; katalog 30 platform terverifikasi via rubrik.
-- [ ] Logging scan & cost monitoring dasar aktif (PRD §43).
-
-**F2 BUILD 5 (production hardening):**
-- [ ] Security audit final (checklist AI_RULES §18 Pre-Release); secret review.
-- [ ] Domain custom + SSL (Cloudflare); monitoring (PostHog/Sentry); analytics.
-- [ ] Pisah staging/prod Supabase bila perlu; operational controls (rate limit, governor).
+**F2 (BUILD 6–7):**
+- [ ] Domain custom `cuanradar.id` + SSL (Cloudflare); monitoring (PostHog) & analytics aktif.
+- [ ] Pisah staging/prod Supabase bila perlu; operational controls lanjutan (governor penuh).
+- [ ] Ekspansi katalog 50+ platform; re-verifikasi terjadwal; komunitas payout_reports.
 
 **F3:**
 - [ ] Payment gateway (Midtrans/Xendit) server-side; PWA push; B2B.

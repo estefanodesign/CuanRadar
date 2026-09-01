@@ -68,6 +68,33 @@
   --shadow-accent: 4px 4px 8px rgba(0,0,0,0.5), -4px -4px 8px rgba(255,100,110,0.15);
 }
 
+/* Override elemen yang menyandang nilai terang hardcoded agar konsisten di dark:
+   embossed (highlight putih → gelap), screws highlight, screen/device tetap panel gelap. */
+:root.dark .ins-embossed {
+  text-shadow: 0 1px 1px rgba(0,0,0,0.6), 0 -1px 1px rgba(255,255,255,0.08);
+}
+:root.dark .ins-screws::after {
+  background-image:
+    radial-gradient(circle at 14px 14px, rgba(255,255,255,0.12) 1px, transparent 2px),
+    radial-gradient(circle at calc(100% - 14px) 14px, rgba(255,255,255,0.12) 1px, transparent 2px),
+    radial-gradient(circle at 14px calc(100% - 14px), rgba(255,255,255,0.12) 1px, transparent 2px),
+    radial-gradient(circle at calc(100% - 14px) calc(100% - 14px), rgba(255,255,255,0.12) 1px, transparent 2px);
+}
+:root.dark .ins-vents::before,
+:root.dark .ins-vents::after,
+:root.dark .ins-vents span {
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.04);
+}
+:root.dark .ins-light {
+  background-image: radial-gradient(circle at 12% 8%, rgba(255,255,255,0.08), transparent 55%);
+}
+:root.dark .ins-btn-primary:active {
+  box-shadow: var(--shadow-pressed);
+}
+:root.dark body::before {
+  opacity: 0.35;
+}
+
 /* Registerkan token inti ke Tailwind v4 agar bisa dipakai sbg utility (bg-background, text-accent, dll.) */
 @theme {
   --color-background: var(--background);
@@ -120,10 +147,9 @@ body::before {
   background-color: color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
-body * {
-  position: relative;
-}
-body #root {
+/* NOTE: SENG A J A tidak memakai `body * { position: relative }` — aturan itu override `fixed`/`absolute`
+   di seluruh pohon (header fixed jadi relative → tak mengambang). Posisi diatur per elemen saja. */
+#root {
   position: relative;
   z-index: 1;
 }
@@ -274,13 +300,14 @@ body #root {
 }
 
 /* --- Buttons (Physical Keys) --- */
+/* Padding TIDAK ditetapkan di sini — diatur per tombol via utility px-*/py-* agar ukuran fleksibel
+   & tidak berkonflik dengan utility Tailwind (que .ins-btn didefinisikan setelah utility). */
 .ins-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   border-radius: var(--radius-lg);
-  padding: 0.8rem 1.5rem;
   font-family: var(--font-sans);
   font-weight: 700;
   font-size: 0.875rem;
@@ -338,6 +365,13 @@ body #root {
 .ins-btn-ghost:active {
   transform: translateY(2px);
   box-shadow: var(--shadow-pressed);
+}
+
+/* Icon-only button (toggle dsb.): nolkan padding & paksa pill penuh agar padu dengan ukuran yang ditentukan */
+.ins-icon-btn {
+  padding: 0;
+  gap: 0;
+  border-radius: 9999px;
 }
 
 /* --- Inputs (Data Slots) --- */

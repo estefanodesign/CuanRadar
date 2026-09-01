@@ -8,6 +8,7 @@ import { getSeedPlatforms } from '../lib/seed'
 import { CATEGORY_LABELS, getRewardTypeLabel } from '../lib/format'
 import { PLANS } from '../config/plans'
 import { capture } from '../lib/analytics'
+import { ThemeToggle } from '../components/ThemeToggle'
 import type { Platform } from '../types'
 
 const FEATURES = [
@@ -58,6 +59,18 @@ function useInView<T extends HTMLElement>(): [RefObject<T | null>, boolean] {
   return [ref, inView]
 }
 
+// ——— Deteksi scroll untuk nav-header floating (muncul/terangkat saat halaman digulir) ———
+function useScrolled(threshold = 24): boolean {
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > threshold)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [threshold])
+  return scrolled
+}
+
 function CountUp({ target, suffix }: { target: number; suffix: string }) {
   const [ref, inView] = useInView<HTMLSpanElement>()
   const [value, setValue] = useState(0)
@@ -102,7 +115,6 @@ function RadarVisual() {
         <span key={i} className="radar-particle" style={{ left: p.left, top: p.top, animationDelay: p.delay }} />
       ))}
       <div className="radar-center" />
-      <div className="absolute inset-0 rounded-full ins-screen" />
     </div>
   )
 }
@@ -128,6 +140,7 @@ function PlatformChip({ p }: { p: Platform }) {
 export function LandingPage() {
   const platforms = getSeedPlatforms().slice(0, 12)
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly')
+  const scrolled = useScrolled()
 
   useEffect(() => {
     capture('landing_view')
@@ -135,9 +148,19 @@ export function LandingPage() {
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-border-shadow bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:px-12">
+      {/* Header — floating: muncul/terangkat saat halaman digulir (bukan sticky statis) */}
+      <header
+        className={`fixed inset-x-0 top-0 z-30 transition-all duration-300 ${
+          scrolled
+            ? 'border-b border-border-shadow bg-background/85 shadow-[var(--shadow-sharp)] backdrop-blur-xl'
+            : 'border-b border-transparent bg-transparent'
+        }`}
+      >
+        <div
+          className={`mx-auto flex max-w-6xl items-center justify-between px-4 transition-all duration-300 md:px-12 ${
+            scrolled ? 'py-2.5' : 'py-4'
+          }`}
+        >
           <Link to="/" className="flex items-center gap-2.5">
             <span className="ins-btn-secondary flex h-9 w-9 items-center justify-center rounded-full">
               <span className="ins-led ins-led-green ins-led-pulse" />
@@ -151,10 +174,11 @@ export function LandingPage() {
             <a href="#harga" className="transition hover:text-accent">Harga</a>
           </nav>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Link to="/app/login" className="ins-btn ins-btn-ghost px-3 py-2 text-sm">
               Masuk
             </Link>
-            <Link to="/app" className="ins-btn ins-btn-primary px-4 py-2 text-sm">
+            <Link to="/app" className="ins-btn ins-btn-primary px-4 py-1.5 text-sm">
               Coba Gratis
             </Link>
           </div>
@@ -163,7 +187,7 @@ export function LandingPage() {
 
       {/* 1. Hero */}
       <section className="ins-light border-b border-border-shadow">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 pb-16 pt-10 md:grid-cols-2 md:items-center md:px-12 md:pb-24 md:pt-16">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 pb-16 pt-24 md:grid-cols-2 md:items-center md:px-12 md:pb-24 md:pt-32">
           <div>
             <p className="ins-card inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-bold text-accent">
               <span className="ins-led ins-led-red ins-led-pulse" />
@@ -178,10 +202,10 @@ export function LandingPage() {
               terkurasi, dan siap Anda pilih.
             </p>
             <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-              <Link to="/app/scan" className="ins-btn ins-btn-primary px-7 py-3 text-sm">
+              <Link to="/app/scan" className="ins-btn ins-btn-primary px-6 py-2 text-sm">
                 Mulai Scan Peluang
               </Link>
-              <a href="#platform" className="ins-btn ins-btn-secondary px-7 py-3 text-sm">
+              <a href="#platform" className="ins-btn ins-btn-secondary px-6 py-2 text-sm">
                 Lihat Sinyal
               </a>
             </div>
@@ -340,7 +364,7 @@ export function LandingPage() {
                   </ul>
                   <Link
                     to="/app"
-                    className={`ins-btn mt-6 text-sm ${highlight ? 'ins-btn-primary' : 'ins-btn-secondary'}`}
+                    className={`ins-btn px-4 py-2 mt-6 text-sm ${highlight ? 'ins-btn-primary' : 'ins-btn-secondary'}`}
                   >
                     {plan.id === 'free' ? 'Mulai gratis' : 'Upgrade (Fase 2)'}
                   </Link>
