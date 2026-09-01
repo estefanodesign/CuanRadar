@@ -7,6 +7,7 @@ import { Link } from '@tanstack/react-router'
 import { getSeedPlatforms } from '../lib/seed'
 import { CATEGORY_LABELS, getRewardTypeLabel } from '../lib/format'
 import { PLANS } from '../config/plans'
+import { capture } from '../lib/analytics'
 import type { Platform } from '../types'
 
 const FEATURES = [
@@ -126,6 +127,10 @@ function PlatformChip({ p }: { p: Platform }) {
 export function LandingPage() {
   const platforms = getSeedPlatforms().slice(0, 12)
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly')
+
+  useEffect(() => {
+    capture('landing_view')
+  }, [])
 
   return (
     <div className="min-h-dvh bg-cream text-jade-dark">

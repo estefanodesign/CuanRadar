@@ -18,6 +18,8 @@ import { GovernorBanner } from '../components/GovernorBanner'
 import { CacheStatus } from '../components/CacheStatus'
 import { useScanCredits, useGovernor } from '../lib/scanCredits'
 import { ProvenanceBadge } from '../components/ProvenanceBadge'
+import { useAuth } from '../lib/auth'
+import { capture } from '../lib/analytics'
 import type { Category, ScanPollResult } from '../types'
 
 export function ScanPage() {
@@ -31,13 +33,28 @@ export function ScanPage() {
   const refetch = useRefetchPlatforms()
   const { credits, refresh } = useScanCredits()
   const governor = useGovernor(credits)
+  const { user } = useAuth()
 
   const results = poll?.results ?? []
   const done = poll ? ['completed', 'cache_completed', 'failed', 'limited'].includes(poll.state) : false
   const isDeepRunning = scanType === 'deep' && scanning
 
   async function handleScan() {
+    // Deep Scan mahal → wajib login (operational control, BUILD 5); tamu hanya Quick Scan DB-first.
+    if (scanType === 'deep' && !user) {
+      capture('scan_blocked_login')
+      setPoll({
+        id: `login-${Date.now()}`,
+        state: 'limited',
+        source: 'database',
+        results: [],
+        candidates: 0,
+        error: 'Masuk terlebih dahulu untuk Deep Scan — kuota per user. Quick Scan tetap gratis tanpa login.',
+      })
+      return
+    }
     setScanning(true)
+    capture('scan_started', { type: scanType, category })
     setPoll(
       scanType === 'deep'
         ? { id: `deep-${Date.now()}`, state: 'discovering', source: 'database', results: [], candidates: 0 }
@@ -52,15 +69,18 @@ export function ScanPage() {
               throw new Error('Deep Scan membutuhkan edge function server (deploy: lihat docs/DEPLOYMENT.md)')
             })()
       setPoll(result)
+      capture('scan_completed', { type: scanType, state: result.state, candidates: result.results.length })
       refresh() // kuota server terbaru setelah scan benar-benar berjalan
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Scan gagal'
+      capture('scan_failed', { type: scanType, error: msg })
       setPoll({
         id: `err-${Date.now()}`,
         state: 'failed',
         source: 'database',
         results: [],
         candidates: 0,
-        error: err instanceof Error ? err.message : 'Scan gagal',
+        error: msg,
       })
     } finally {
       setScanning(false)

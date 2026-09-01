@@ -1,9 +1,10 @@
 // CuanRadar — AppLayout (area aplikasi, PRD §50)
 // Responsive penuh: desktop (md+) = sidebar kiri; mobile = top header + bottom nav.
-import { Suspense } from 'react'
+import { Suspense, useEffect } from 'react'
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { useScanCredits } from '../lib/scanCredits'
 import { useAuth } from '../lib/auth'
+import { capture } from '../lib/analytics'
 
 const NAV = [
   { path: '/app', label: 'Dashboard', icon: '🏠' },
@@ -40,6 +41,10 @@ export function AppLayout() {
   const { user, configured } = useAuth()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const { credits } = useScanCredits()
+
+  useEffect(() => {
+    capture('page_view', { path: pathname })
+  }, [pathname])
 
   return (
     <div className="min-h-dvh bg-slate-950 text-slate-100">

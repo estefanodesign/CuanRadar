@@ -210,6 +210,24 @@ Deno.serve(async (req) => {
       userId = data.user?.id ?? null
     }
 
+    // ——— Operational controls (BUILD 5) ———
+    // Deep Scan mahal (AI+search): wajib login (kuota per user). Tamu hanya Quick Scan (DB-first, gratis).
+    if (type === 'deep' && !userId) {
+      return json({ error: 'Masuk terlebih dahulu untuk Deep Scan (kuota per user).', state: 'limited' }, 401)
+    }
+    // Throttle tamu (tanpa user_id) agar tidak bisa spam quick scan: max 20 dalam 10 menit.
+    if (!userId && type === 'quick') {
+      const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+      const { count } = await admin
+        .from('scan_history')
+        .select('*', { count: 'exact', head: true })
+        .is('user_id', null)
+        .gte('created_at', tenMinAgo)
+      if ((count ?? 0) > 20) {
+        return json({ error: 'Terlalu banyak scan — coba lagi sebentar lagi.', state: 'limited' }, 429)
+      }
+    }
+
     // Kuota: konsumsi HANYA bila scan benar-benar berjalan
     const quota = await consumeQuota(supabase, userId, type)
     if (!quota.allowed) {
@@ -239,12 +257,19 @@ Deno.serve(async (req) => {
     }
     const apps = await extractApps(raw)
 
-    // Dedup vs katalog yang sudah ada (hindari duplikat Melolo/ReelRich)
-    const { data: existing } = await admin.from('reward_apps').select('name')
-    const existingSet = new Set((existing ?? []).map((r) => r.name.toLowerCase().replace(/[^a-z0-9]/g, '')))
+    // Dedup vs katalog & review queue (hindari duplikat Melolo/ReelRich + kandidat berulang)
     const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+    const { data: existing } = await admin.from('reward_apps').select('name')
+    const { data: queueRows } = await admin.from('review_queue_items').select('payload')
+    const knownSet = new Set([
+      ...(existing ?? []).map((r) => norm(r.name)),
+      ...(queueRows ?? []).map((r) => norm(r.payload?.name ?? '')).filter(Boolean),
+    ])
     const seen = new Set()
-    const candidates = apps.filter((a) => !existingSet.has(norm(a.name)) && (seen.has(norm(a.name)) ? false : (seen.add(norm(a.name)), true))).slice(0, DEEP_LIMITS.afterFilter)
+    const candidates = apps
+      .filter((a) => !knownSet.has(norm(a.name)))
+      .filter((a) => (seen.has(norm(a.name)) ? false : (seen.add(norm(a.name)), true)))
+      .slice(0, DEEP_LIMITS.afterFilter)
 
     // Review queue (Appendix A6) — publish TIDAK langsung
     let saved = 0
@@ -277,7 +302,9 @@ Deno.serve(async (req) => {
 
     return json({ id: crypto.randomUUID(), state: 'completed', source: 'search', results, candidates: results.length, savedReviewQueue: saved, credits: quota.credits })
   } catch (err) {
-    return json({ error: err.message, state: 'failed' }, 500)
+    // Sanitasi: jangan bocorkan detail internal ke client (AI_RULES §18) — log saja server-side.
+    console.error('[scan] error:', err?.message ?? err)
+    return json({ error: 'Terjadi kesalahan pada server. Coba lagi nanti.', state: 'failed' }, 500)
   }
 })
 
